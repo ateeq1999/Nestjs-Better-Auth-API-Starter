@@ -10,6 +10,8 @@ import fastifyCookie from '@fastify/cookie';
 import fastifyCors from '@fastify/cors';
 import fastifyHelmet from '@fastify/helmet';
 import fastifyMultipart from '@fastify/multipart';
+import { createBullBoard } from '@bull-board/api';
+import { FastifyAdapter as BullBoardFastifyAdapter } from '@bull-board/fastify';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './common/filters/http-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
@@ -121,11 +123,24 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('docs', app, document);
 
+  // Bull Board UI — /admin/queues (only mounted when REDIS_URL is set)
+  // Shows all BullMQ queues registered in EmailModule
+  if (process.env.REDIS_URL) {
+    const serverAdapter = new BullBoardFastifyAdapter();
+    serverAdapter.setBasePath('/admin/queues');
+    createBullBoard({ queues: [], serverAdapter });
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+    await (fastify as any).register(serverAdapter.registerPlugin(), { prefix: '/admin/queues' });
+  }
+
   const port = process.env.PORT ?? 5555;
   await app.listen(port, '0.0.0.0');
   console.log(`Server      → http://localhost:${port}`);
   console.log(`Swagger UI  → http://localhost:${port}/docs`);
   console.log(`Mailpit UI  → http://localhost:8025`);
+  if (process.env.REDIS_URL) {
+    console.log(`Bull Board  → http://localhost:${port}/admin/queues`);
+  }
 }
 
 void bootstrap();

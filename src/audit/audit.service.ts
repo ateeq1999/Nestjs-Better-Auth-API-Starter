@@ -1,8 +1,10 @@
 import { Injectable } from '@nestjs/common';
+import { and, asc, desc, eq, gt } from 'drizzle-orm';
 import { createId } from '@paralleldrive/cuid2';
 import type { FastifyRequest } from 'fastify';
 import { db } from '../db/index';
 import { auditLog } from '../db/schema';
+import { buildCursorPage, type CursorPage, type CursorPaginationDto } from '../common/dto/pagination.dto';
 
 export type AuditAction =
   | 'sign_up'
@@ -57,5 +59,27 @@ export class AuditService {
       ipAddress: req.ip,
       userAgent: req.headers['user-agent'] ?? undefined,
     };
+  }
+
+  // ─── Admin (PG3) ──────────────────────────────────────────────────────────
+
+  async findAll(
+    query: CursorPaginationDto & { userId?: string },
+  ): Promise<CursorPage<typeof auditLog.$inferSelect>> {
+    const limit = query.limit ?? 20;
+
+    const rows = await db
+      .select()
+      .from(auditLog)
+      .where(
+        and(
+          query.cursor ? gt(auditLog.id, query.cursor) : undefined,
+          query.userId ? eq(auditLog.userId, query.userId) : undefined,
+        ),
+      )
+      .orderBy(desc(auditLog.createdAt), asc(auditLog.id))
+      .limit(limit + 1);
+
+    return buildCursorPage(rows, limit, (r) => r.id);
   }
 }

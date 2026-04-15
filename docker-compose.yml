@@ -1,6 +1,30 @@
 version: '3.8'
 
 services:
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Application (P19 D9) — uncomment to run the full stack in Docker
+  # Build first: docker build -t nest-better-auth .
+  # Then: docker compose up -d
+  # ─────────────────────────────────────────────────────────────────────────────
+  # api:
+  #   image: nest-better-auth:latest
+  #   container_name: nest_better_auth_api
+  #   ports:
+  #     - '5555:5555'
+  #   env_file: .env
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+  #   healthcheck:
+  #     test: ['CMD-SHELL', 'wget -qO- http://localhost:5555/health || exit 1']
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #     start_period: 30s
+  #   restart: unless-stopped
+
   postgres:
     image: postgres:16-alpine
     container_name: nest_better_auth_db

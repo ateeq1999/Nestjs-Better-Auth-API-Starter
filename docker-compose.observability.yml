@@ -1,0 +1,81 @@
+# Opt-in observability stack (P14 / P19 D5)
+# Run alongside the main compose file:
+#   docker compose -f docker-compose.yml -f docker-compose.observability.yml up -d
+#
+# Services:
+#   Prometheus  http://localhost:9090     — metrics scraping
+#   Grafana     http://localhost:3100     — dashboards (admin / admin)
+#   Loki        http://localhost:3101     — log aggregation (Grafana data source)
+#   Tempo       http://localhost:3200     — distributed tracing (Grafana data source)
+#
+# Prerequisites (pull images first):
+#   docker pull prom/prometheus
+#   docker pull grafana/grafana
+#   docker pull grafana/loki
+#   docker pull grafana/tempo
+
+version: '3.8'
+
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: nest_better_auth_prometheus
+    ports:
+      - '9090:9090'
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: nest_better_auth_grafana
+    ports:
+      - '3100:3000'
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: 'false'
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - prometheus
+      - loki
+      - tempo
+    restart: unless-stopped
+
+  loki:
+    image: grafana/loki:latest
+    container_name: nest_better_auth_loki
+    ports:
+      - '3101:3100'
+    volumes:
+      - ./observability/loki.yml:/etc/loki/local-config.yaml:ro
+      - loki_data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    restart: unless-stopped
+
+  tempo:
+    image: grafana/tempo:latest
+    container_name: nest_better_auth_tempo
+    ports:
+      - '3200:3200'   # Tempo UI / query
+      - '4317:4317'   # OTLP gRPC
+      - '4318:4318'   # OTLP HTTP
+    volumes:
+      - ./observability/tempo.yml:/etc/tempo.yaml:ro
+      - tempo_data:/var/tempo
+    command: -config.file=/etc/tempo.yaml
+    restart: unless-stopped
+
+volumes:
+  prometheus_data:
+  grafana_data:
+  loki_data:
+  tempo_data:

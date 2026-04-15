@@ -1,0 +1,87 @@
+# Production overrides (P19 D6)
+# Merge with the base compose file:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# What this file does:
+#   - Adds the API application service with health check
+#   - Removes dev-only tools (Mailpit, Adminer, RedisInsight)
+#   - Sets restart: always on all services
+#   - Adds memory limits
+#   - Reads secrets from environment (not hardcoded)
+
+version: '3.8'
+
+services:
+  # ─── Application ──────────────────────────────────────────────────────────
+  api:
+    image: nest-better-auth:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nest_better_auth_api
+    ports:
+      - '${PORT:-5555}:5555'
+    env_file:
+      - .env.production
+    environment:
+      NODE_ENV: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://localhost:5555/health || exit 1']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # ─── Database — production overrides ──────────────────────────────────────
+  postgres:
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # ─── Cache / Queue — production overrides ─────────────────────────────────
+  redis:
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  # ─── MinIO — production overrides ─────────────────────────────────────────
+  minio:
+    restart: always
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # ─── Disable dev-only services ────────────────────────────────────────────
+  mailpit:
+    profiles:
+      - dev   # only starts with --profile dev; excluded in prod
+
+  adminer:
+    profiles:
+      - dev
+
+  redisinsight:
+    profiles:
+      - dev

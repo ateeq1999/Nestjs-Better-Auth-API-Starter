@@ -26,6 +26,7 @@ import { Roles } from '../common/decorators/roles.decorator';
 import { CursorPaginationDto } from '../common/dto/pagination.dto';
 import { UserService } from './user.service';
 import { UpdateUserAdminDto } from './dto/update-user-admin.dto';
+import { AuditService } from '../audit/audit.service';
 import type { UserRole } from '../db/schema';
 
 @ApiTags('Admin — Users')
@@ -36,7 +37,10 @@ import type { UserRole } from '../db/schema';
 @Roles('admin')
 @Controller({ version: '1', path: 'api/admin/users' })
 export class AdminController {
-  constructor(private readonly users: UserService) {}
+  constructor(
+    private readonly users: UserService,
+    private readonly audit: AuditService,
+  ) {}
 
   // ─── Stats ─────────────────────────────────────────────────────────────────
 
@@ -89,6 +93,18 @@ export class AdminController {
       return this.users.forceVerifyEmail(id);
     }
     throw new BadRequestException('No valid update field provided');
+  }
+
+  // ─── Audit Logs ───────────────────────────────────────────────────────────
+
+  @Get('audit-logs')
+  @ApiOperation({ summary: 'List all audit log entries — cursor-paginated (admin only)' })
+  @ApiResponse({ status: 200, description: 'Paginated audit log' })
+  listAuditLogs(
+    @Query() query: CursorPaginationDto,
+    @Query('userId') userId?: string,
+  ) {
+    return this.audit.findAll({ ...query, userId });
   }
 
   // ─── Soft Delete ──────────────────────────────────────────────────────────
