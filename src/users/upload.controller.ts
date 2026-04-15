@@ -1,5 +1,6 @@
 import {
   Controller,
+  Inject,
   Post,
   Req,
   UseGuards,
@@ -21,6 +22,7 @@ import type { FastifyRequest } from 'fastify';
 import { AuthGuard } from '../common/guards/auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { UserService } from './user.service';
+import { STORAGE_SERVICE, type StorageService } from '../storage/storage.interface';
 
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
@@ -31,7 +33,10 @@ const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'
 @UseGuards(AuthGuard)
 @Controller({ version: '1', path: 'api/users/me' })
 export class UploadController {
-  constructor(private readonly users: UserService) {}
+  constructor(
+    private readonly users: UserService,
+    @Inject(STORAGE_SERVICE) private readonly storage: StorageService,
+  ) {}
 
   /**
    * POST /v1/api/users/me/avatar
@@ -91,18 +96,10 @@ export class UploadController {
       chunks.push(chunk);
     }
 
-    /**
-     * TODO: Replace this placeholder with real storage (S3, R2, local disk, etc.)
-     * The `url` returned here should be the public URL of the stored file.
-     *
-     * Example (S3):
-     *   const key = `avatars/${currentUser.id}/${Date.now()}-${part.filename}`;
-     *   await s3.putObject({ Bucket: BUCKET, Key: key, Body: Buffer.concat(chunks), ContentType: part.mimetype });
-     *   const url = `https://${BUCKET}.s3.amazonaws.com/${key}`;
-     */
-    const url = `/uploads/avatars/${currentUser.id}/${Date.now()}-${part.filename}`;
+    const ext = part.filename.split('.').pop() ?? 'jpg';
+    const key = `avatars/${currentUser.id}/${Date.now()}.${ext}`;
+    const url = await this.storage.upload(Buffer.concat(chunks), key, part.mimetype);
 
-    // Persist the avatar URL on the user profile
     await this.users.updateProfile(currentUser.id, { image: url });
 
     return { url };

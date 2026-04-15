@@ -9,6 +9,7 @@ import { AuditModule } from './audit/audit.module';
 import { AppConfigModule } from './config/config.module';
 import { AppCacheModule } from './cache/cache.module';
 import { validateEnv } from './config/env.config';
+import { JobsModule } from './jobs/jobs.module';
 
 /**
  * Root application module.
@@ -41,8 +42,9 @@ import { validateEnv } from './config/env.config';
     AppConfigModule,  // Typed ConfigService wrapper (N8)
     AuditModule,      // Auth event audit log (S8)
     AuthModule,       // All auth controllers + LockoutService
-    UserModule,       // UserService + DeviceTokenController + UploadController
+    UserModule,       // UserService + DeviceTokenController + UploadController + AdminController
     HealthModule,
+    JobsModule,       // Scheduled cleanup jobs (P18)
     // EmailModule,   // BullMQ email queue (N13) — requires REDIS_URL
   ],
   providers: [

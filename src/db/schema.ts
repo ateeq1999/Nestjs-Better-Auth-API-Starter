@@ -21,6 +21,12 @@ export const user = pgTable('users', {
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
   // Two-factor auth fields (populated by better-auth twoFactor plugin)
   twoFactorEnabled: boolean('two_factor_enabled').default(false),
+  // RBAC (P11)
+  role: varchar('role', { length: 50 }).notNull().default('user'), // 'user' | 'admin' | 'moderator'
+  // Admin management (P13)
+  bannedAt: timestamp('banned_at'),
+  banReason: text('ban_reason'),
+  deletedAt: timestamp('deleted_at'), // soft-delete
 });
 
 export const session = pgTable('sessions', {
@@ -131,6 +137,7 @@ export const deviceToken = pgTable('device_tokens', {
 // TypeScript types
 // ---------------------------------------------------------------------------
 
+export type UserRole = 'user' | 'admin' | 'moderator';
 export type User = typeof user.$inferSelect;
 export type Session = typeof session.$inferSelect;
 export type Account = typeof account.$inferSelect;
