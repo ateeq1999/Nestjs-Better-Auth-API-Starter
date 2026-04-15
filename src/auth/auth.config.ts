@@ -1,10 +1,10 @@
 import { betterAuth } from 'better-auth';
-import { bearer } from 'better-auth/plugins';
-import { twoFactor } from 'better-auth/plugins';
+import { bearer, magicLink, organization, twoFactor } from 'better-auth/plugins';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { db } from '../db';
 import * as schema from '../db/schema';
 import { sendEmail } from './email.service';
+import { renderEmail } from '../email/template.service';
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -15,6 +15,9 @@ export const auth = betterAuth({
       account: schema.account,
       verification: schema.verification,
       twoFactor: schema.twoFactor,
+      organization: schema.organization,
+      member: schema.member,
+      invitation: schema.invitation,
     },
   }),
 
@@ -44,24 +47,50 @@ export const auth = betterAuth({
     twoFactor({
       issuer: 'NestJS Better-Auth',
     }),
+
+    /**
+     * Magic link — passwordless email sign-in (P10).
+     * Adds endpoints:
+     *   POST /api/auth/magic-link/send-magic-link   — send login link to email
+     *   GET  /api/auth/magic-link/verify-magic-link — verify token from email
+     */
+    magicLink({
+      sendMagicLink: async (data) => {
+        const { html, text } = renderEmail({
+          template: 'magic-link',
+          subject: 'Your sign-in link',
+          data: { url: data.url },
+        });
+        await sendEmail({ to: data.email, subject: 'Your sign-in link', html, text });
+      },
+    }),
+
+    /**
+     * Organization / multi-tenancy (P12).
+     * Adds endpoints for creating and managing workspaces, inviting members,
+     * and managing member roles.
+     */
+    organization(),
   ],
 
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: true,
     sendVerificationEmail: async (user, url) => {
-      await sendEmail({
-        to: user.email,
-        subject: 'Verify your email',
-        html: `<p>Click <a href="${url}">here</a> to verify your email.</p>`,
+      const { html, text } = renderEmail({
+        template: 'email-verification',
+        subject: 'Verify your email address',
+        data: { name: user.name ?? user.email, url },
       });
+      await sendEmail({ to: user.email, subject: 'Verify your email address', html, text });
     },
     sendResetPasswordEmail: async (user, url) => {
-      await sendEmail({
-        to: user.email,
+      const { html, text } = renderEmail({
+        template: 'password-reset',
         subject: 'Reset your password',
-        html: `<p>Click <a href="${url}">here</a> to reset your password.</p>`,
+        data: { name: user.name ?? user.email, email: user.email, url },
       });
+      await sendEmail({ to: user.email, subject: 'Reset your password', html, text });
     },
   },
 

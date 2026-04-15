@@ -2,7 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { and, eq, gte, count } from 'drizzle-orm';
 import { createId } from '@paralleldrive/cuid2';
 import { db } from '../db/index';
-import { loginAttempt, accountLockout } from '../db/schema';
+import { loginAttempt, accountLockout, user } from '../db/schema';
+import { sendEmail } from './email.service';
+import { renderEmail } from '../email/template.service';
 
 const MAX_ATTEMPTS = 5;           // lock after this many consecutive failures
 const WINDOW_MS = 15 * 60 * 1000; // 15-minute rolling window
@@ -101,6 +103,33 @@ export class LockoutService {
           lastAttemptAt: new Date(),
         },
       });
+
+    // Send lockout-alert email on the threshold crossing (P15 E2)
+    if (shouldLock) {
+      void this.sendLockoutAlert(email, recentFailures, ipAddress).catch(() => {/* non-critical */});
+    }
+  }
+
+  private async sendLockoutAlert(
+    email: string,
+    failedAttempts: number,
+    ipAddress?: string,
+  ): Promise<void> {
+    const found = await db.query.user.findFirst({ where: eq(user.email, email) });
+    const resetUrl = `${process.env.BETTER_AUTH_URL ?? 'http://localhost:5555'}/api/auth/forget-password`;
+    const { html, text } = renderEmail({
+      template: 'lockout-alert',
+      subject: 'Your account has been temporarily locked',
+      data: {
+        name: found?.name ?? email,
+        email,
+        failedAttempts,
+        ipAddress: ipAddress ?? 'unknown',
+        timestamp: new Date().toUTCString(),
+        resetUrl,
+      },
+    });
+    await sendEmail({ to: email, subject: 'Your account has been temporarily locked', html, text });
   }
 
   async recordSuccess(email: string): Promise<void> {

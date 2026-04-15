@@ -134,6 +134,46 @@ export const deviceToken = pgTable('device_tokens', {
 });
 
 // ---------------------------------------------------------------------------
+// Organization / multi-tenancy (better-auth organization plugin — P12)
+// ---------------------------------------------------------------------------
+
+export const organization = pgTable('organizations', {
+  id: varchar('id', { length: 255 }).primaryKey(),
+  name: varchar('name', { length: 255 }).notNull(),
+  slug: varchar('slug', { length: 255 }).notNull().unique(),
+  logo: varchar('logo', { length: 500 }),
+  metadata: text('metadata'), // JSON string
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+export const member = pgTable('members', {
+  id: varchar('id', { length: 255 }).primaryKey(),
+  organizationId: varchar('organization_id', { length: 255 })
+    .notNull()
+    .references(() => organization.id, { onDelete: 'cascade' }),
+  userId: varchar('user_id', { length: 255 })
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  role: varchar('role', { length: 50 }).notNull().default('member'), // 'owner' | 'admin' | 'member'
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+export const invitation = pgTable('invitations', {
+  id: varchar('id', { length: 255 }).primaryKey(),
+  organizationId: varchar('organization_id', { length: 255 })
+    .notNull()
+    .references(() => organization.id, { onDelete: 'cascade' }),
+  email: varchar('email', { length: 255 }).notNull(),
+  role: varchar('role', { length: 50 }).notNull().default('member'),
+  status: varchar('status', { length: 50 }).notNull().default('pending'), // 'pending' | 'accepted' | 'rejected'
+  inviterId: varchar('inviter_id', { length: 255 })
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  expiresAt: timestamp('expires_at').notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
 // TypeScript types
 // ---------------------------------------------------------------------------
 
@@ -147,3 +187,6 @@ export type AuditLog = typeof auditLog.$inferSelect;
 export type LoginAttempt = typeof loginAttempt.$inferSelect;
 export type AccountLockout = typeof accountLockout.$inferSelect;
 export type DeviceToken = typeof deviceToken.$inferSelect;
+export type Organization = typeof organization.$inferSelect;
+export type Member = typeof member.$inferSelect;
+export type Invitation = typeof invitation.$inferSelect;

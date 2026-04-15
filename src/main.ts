@@ -1,3 +1,4 @@
+import './tracing'; // OTel — must be first (OB3)
 import 'dotenv/config';
 import { NestFactory, Reflector } from '@nestjs/core';
 import {
@@ -23,10 +24,31 @@ async function bootstrap() {
     throw new Error('COOKIE_SECRET env var must be set in production');
   }
 
+  // Pino-Loki transport — ships structured logs to Loki when LOKI_URL is set (OB4)
+  const lokiUrl = process.env.LOKI_URL;
+  const pinoOptions = lokiUrl
+    ? {
+        transport: {
+          targets: [
+            { target: 'pino/file', options: { destination: 1 }, level: 'info' }, // stdout
+            {
+              target: 'pino-loki',
+              options: {
+                host: lokiUrl,
+                labels: { app: 'nest-better-auth', env: process.env.NODE_ENV ?? 'development' },
+                batching: true,
+                interval: 5,
+              },
+              level: 'info',
+            },
+          ],
+        },
+      }
+    : {};
+
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
-    // genReqId attaches a unique ID to every request — forwarded as X-Request-Id
-    new FastifyAdapter({ genReqId: () => crypto.randomUUID() }),
+    new FastifyAdapter({ genReqId: () => crypto.randomUUID(), ...pinoOptions }),
     { bodyParser: false },
   );
 

@@ -1,0 +1,11 @@
+<p>Hi {{name}},</p>
+<p>Your account (<strong>{{email}}</strong>) has been temporarily locked due to <strong>{{failedAttempts}} failed sign-in attempts</strong>.</p>
+<p>Your account will automatically unlock in <strong>30 minutes</strong>.</p>
+<p>If this was you and you've forgotten your password, you can reset it:</p>
+<a href="{{resetUrl}}" class="btn">Reset Password</a>
+<hr class="divider" />
+<p style="color:#ef4444;font-size:13px;"><strong>If this wasn't you</strong>, your account credentials may be compromised. Please reset your password immediately and enable two-factor authentication.</p>
+<p style="font-size:13px;color:#71717a;">Sign-in attempt details:<br />
+  Time: {{timestamp}}<br />
+  IP address: {{ipAddress}}
+</p>

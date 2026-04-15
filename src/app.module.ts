@@ -10,6 +10,7 @@ import { AppConfigModule } from './config/config.module';
 import { AppCacheModule } from './cache/cache.module';
 import { validateEnv } from './config/env.config';
 import { JobsModule } from './jobs/jobs.module';
+import { MetricsModule } from './metrics/metrics.module';
 
 /**
  * Root application module.
@@ -45,6 +46,7 @@ import { JobsModule } from './jobs/jobs.module';
     UserModule,       // UserService + DeviceTokenController + UploadController + AdminController
     HealthModule,
     JobsModule,       // Scheduled cleanup jobs (P18)
+    MetricsModule,    // Prometheus metrics at /metrics (P14 OB1-OB2)
     // EmailModule,   // BullMQ email queue (N13) — requires REDIS_URL
   ],
   providers: [

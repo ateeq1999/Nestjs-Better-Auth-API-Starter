@@ -4,6 +4,7 @@ export interface SendEmailOptions {
   to: string;
   subject: string;
   html: string;
+  text?: string; // plain-text fallback (P15 E5)
 }
 
 export async function sendEmail(options: SendEmailOptions): Promise<void> {
@@ -21,5 +22,6 @@ export async function sendEmail(options: SendEmailOptions): Promise<void> {
     to: options.to,
     subject: options.subject,
     html: options.html,
+    ...(options.text ? { text: options.text } : {}),
   });
 }
