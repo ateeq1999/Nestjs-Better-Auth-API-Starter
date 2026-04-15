@@ -1,98 +1,262 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# NestJS Better-Auth API Starter
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A production-ready NestJS API starter with a full authentication system powered by [better-auth](https://better-auth.com). Built on Fastify for performance, Drizzle ORM for type-safe database access, and PostgreSQL for persistence.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+---
 
-## Description
+## Stack
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+| Layer | Technology |
+|---|---|
+| Framework | NestJS 11 + Fastify |
+| Auth | better-auth 1.6 |
+| ORM | Drizzle ORM |
+| Database | PostgreSQL 16 |
+| Validation | class-validator + class-transformer |
+| Rate limiting | @nestjs/throttler |
+| API docs | Swagger / OpenAPI (`/docs`) |
+| Email (dev) | Mailpit (SMTP trap) |
+| Runtime | Node.js 20+ / pnpm |
 
-## Project setup
+---
 
-```bash
-$ pnpm install
+## Features
+
+- **Email + password auth** — sign-up, sign-in, sign-out
+- **Email verification** — required before sign-in; re-sendable
+- **Password reset** — forget-password / reset-password flow via email
+- **Google OAuth** — optional; enabled automatically when env vars are set
+- **Session management** — cookie-based sessions via better-auth
+- **Protected routes** — `AuthGuard` + `@CurrentUser()` decorator
+- **Rate limiting** — 100 req/min globally, 20 req/min on auth endpoints
+- **CORS** — configurable per-environment via `CORS_ORIGINS`
+- **Input validation** — global `ValidationPipe` with whitelist enforcement
+- **Consistent error shape** — global exception filter (`{ statusCode, message, error, timestamp }`)
+- **Health check** — `GET /health` with live DB connectivity check
+- **Env validation** — app throws with a clear message on startup if required vars are missing
+- **OpenAPI docs** — auto-generated Swagger UI at `/docs`
+
+---
+
+## Project Structure
+
+```
+src/
+├── auth/
+│   ├── dto/
+│   │   └── change-password.dto.ts
+│   ├── auth.config.ts        # better-auth configuration (email, Google, session)
+│   ├── auth.controller.ts    # catch-all → delegates all /api/auth/* to auth.handler()
+│   ├── auth.module.ts
+│   ├── email.service.ts      # nodemailer SMTP sender
+│   ├── password.service.ts   # bcrypt hash / verify helpers
+│   └── user.controller.ts    # GET /api/users/me, POST /api/users/change-password
+├── common/
+│   ├── decorators/
+│   │   └── current-user.decorator.ts   # @CurrentUser() param decorator
+│   ├── filters/
+│   │   └── http-exception.filter.ts    # global error response shaper
+│   └── guards/
+│       └── auth.guard.ts               # session-based AuthGuard
+├── config/
+│   └── env.config.ts         # startup env validation
+├── db/
+│   ├── index.ts              # Drizzle + pg Pool setup
+│   └── schema.ts             # users, sessions, accounts, verifications tables
+├── health/
+│   ├── drizzle-health.indicator.ts   # SELECT 1 liveness probe
+│   ├── health.controller.ts          # GET /health
+│   └── health.module.ts
+├── app.module.ts             # ConfigModule, ThrottlerModule, AuthModule, HealthModule
+└── main.ts                   # Fastify bootstrap, plugins, global pipes/filters
 ```
 
-## Compile and run the project
+---
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 20+
+- pnpm
+- Docker (for PostgreSQL + Mailpit)
+
+### 1. Clone and install
 
 ```bash
-# development
-$ pnpm run start
-
-# watch mode
-$ pnpm run start:dev
-
-# production mode
-$ pnpm run start:prod
+pnpm install
 ```
 
-## Run tests
+### 2. Configure environment
 
 ```bash
-# unit tests
-$ pnpm run test
-
-# e2e tests
-$ pnpm run test:e2e
-
-# test coverage
-$ pnpm run test:cov
+cp .env.example .env
 ```
 
-## Deployment
+Edit `.env` — the only values you **must** change for local dev are the secrets:
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+```env
+BETTER_AUTH_SECRET=any-random-string-32-chars-minimum
+COOKIE_SECRET=any-random-string-32-chars-minimum
+```
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+### 3. Start infrastructure
 
 ```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
+docker compose up -d
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+This starts:
+- **PostgreSQL** on `localhost:5432`
+- **Mailpit** SMTP trap on `localhost:1025` (UI at `http://localhost:8025`)
 
-## Resources
+### 4. Run migrations
 
-Check out a few resources that may come in handy when working with NestJS:
+```bash
+pnpm db:push        # push schema to DB (dev shortcut)
+# or
+pnpm db:generate    # generate migration files
+pnpm db:migrate     # apply migrations
+```
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+### 5. Start the server
 
-## Support
+```bash
+pnpm start:dev
+```
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+| URL | Purpose |
+|---|---|
+| `http://localhost:5555` | API |
+| `http://localhost:5555/docs` | Swagger UI |
+| `http://localhost:8025` | Mailpit (dev email inbox) |
 
-## Stay in touch
+---
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+## API Reference
+
+All auth routes are delegated to better-auth's handler. The full list is visible in the Swagger UI at `/docs`.
+
+### Auth (`/api/auth/*`)
+
+| Method | Path | Description |
+|---|---|---|
+| `POST` | `/api/auth/sign-up/email` | Register with email + password |
+| `POST` | `/api/auth/sign-in/email` | Sign in, sets session cookie |
+| `POST` | `/api/auth/sign-out` | Invalidate session |
+| `GET` | `/api/auth/get-session` | Returns current session + user |
+| `POST` | `/api/auth/verify-email` | Verify email with token from inbox |
+| `POST` | `/api/auth/forget-password` | Send password-reset email |
+| `POST` | `/api/auth/reset-password` | Reset password with token |
+| `GET` | `/api/auth/sign-in/social?provider=google` | Initiate Google OAuth (if configured) |
+| `GET` | `/api/auth/callback/google` | Google OAuth callback |
+
+### Users (`/api/users/*`)
+
+> All routes require an active session (cookie).
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/api/users/me` | Get the authenticated user's profile |
+| `POST` | `/api/users/change-password` | Change password (verifies current first) |
+
+### Health
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/health` | Returns DB liveness status |
+
+---
+
+## Environment Variables
+
+| Variable | Required | Default | Description |
+|---|---|---|---|
+| `PORT` | No | `5555` | HTTP port |
+| `NODE_ENV` | No | `development` | `development` or `production` |
+| `DATABASE_URL` | **Yes** | — | PostgreSQL connection string |
+| `BETTER_AUTH_URL` | **Yes** | — | Public base URL of this API |
+| `BETTER_AUTH_SECRET` | **Yes** | — | Secret for better-auth token signing |
+| `COOKIE_SECRET` | Prod only | — | Secret for cookie signing (required in production) |
+| `CORS_ORIGINS` | No | `http://localhost:5173,...` | Comma-separated allowed origins |
+| `GOOGLE_CLIENT_ID` | No | — | Enables Google OAuth when set with secret |
+| `GOOGLE_CLIENT_SECRET` | No | — | Enables Google OAuth when set with ID |
+| `SMTP_HOST` | No | `localhost` | SMTP server host |
+| `SMTP_PORT` | No | `1025` | SMTP server port |
+| `SMTP_FROM` | No | `noreply@localhost` | From address for outgoing emails |
+| `SMTP_USER` | No | — | SMTP auth username (blank for Mailpit) |
+| `SMTP_PASS` | No | — | SMTP auth password |
+
+---
+
+## Google OAuth Setup
+
+1. Create a project in [Google Cloud Console](https://console.cloud.google.com)
+2. Enable the **Google+ API** (or **Google Identity**)
+3. Create an OAuth 2.0 Client ID (Web application)
+4. Add an authorized redirect URI:
+   ```
+   {BETTER_AUTH_URL}/api/auth/callback/google
+   ```
+5. Add to `.env`:
+   ```env
+   GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
+   GOOGLE_CLIENT_SECRET=your-client-secret
+   ```
+
+The Google provider activates automatically on next restart — no code changes needed.
+
+---
+
+## Protecting Routes
+
+Use `AuthGuard` and `@CurrentUser()` in any controller:
+
+```typescript
+import { Controller, Get, UseGuards } from '@nestjs/common';
+import { AuthGuard } from '../common/guards/auth.guard';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
+
+@Controller('api/posts')
+@UseGuards(AuthGuard)
+export class PostsController {
+  @Get()
+  listPosts(@CurrentUser() user: { id: string; email: string }) {
+    // user is guaranteed to be authenticated here
+  }
+}
+```
+
+---
+
+## Database Commands
+
+```bash
+pnpm db:generate   # generate migration files from schema changes
+pnpm db:migrate    # apply pending migrations
+pnpm db:push       # push schema directly (dev only — skips migration files)
+pnpm db:studio     # open Drizzle Studio (visual DB browser)
+pnpm db:check      # check for schema drift
+```
+
+---
+
+## Development Scripts
+
+```bash
+pnpm start:dev     # watch mode
+pnpm start:debug   # watch mode with debugger
+pnpm build         # compile to /dist
+pnpm start:prod    # run compiled output
+pnpm lint          # ESLint --fix
+pnpm format        # Prettier --write
+pnpm test          # unit tests
+pnpm test:e2e      # end-to-end tests
+pnpm test:cov      # test coverage report
+```
+
+---
 
 ## License
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+MIT
