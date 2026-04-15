@@ -1,4 +1,4 @@
-import { All, Controller, Get, Param, Req, Res } from '@nestjs/common';
+import { All, Controller, Get, Param, Req, Res, VERSION_NEUTRAL } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -23,7 +23,7 @@ import { auth } from '../auth.config';
  */
 @ApiTags('OAuth')
 @Throttle({ default: { ttl: 60_000, limit: 20 } })
-@Controller('api/auth')
+@Controller({ version: VERSION_NEUTRAL, path: 'api/auth' })
 export class OAuthController {
   /**
    * GET /api/auth/sign-in/social?provider=google

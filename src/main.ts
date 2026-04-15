@@ -9,9 +9,11 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import fastifyCookie from '@fastify/cookie';
 import fastifyCors from '@fastify/cors';
 import fastifyHelmet from '@fastify/helmet';
+import fastifyMultipart from '@fastify/multipart';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './common/filters/http-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+import { PinoLoggerService } from './common/logger/pino-logger.service';
 
 async function bootstrap() {
   const cookieSecret = process.env.COOKIE_SECRET;
@@ -38,6 +40,11 @@ async function bootstrap() {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const fastify = app.getHttpAdapter().getInstance();
 
+  // Wire Fastify's Pino instance into NestJS Logger so all app logs share
+  // the same structured JSON format and request-ID correlation (N1)
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+  app.useLogger(PinoLoggerService.fromPinoLogger(fastify.log));
+
   // Security headers — helmet sets CSP, HSTS, X-Frame-Options, etc.
   await fastify.register(fastifyHelmet, {
     // Relax CSP for Swagger UI (inline scripts + styles are required)
@@ -60,6 +67,11 @@ async function bootstrap() {
   fastify.addHook('onSend', (_req, reply, _payload, done) => {
     void reply.header('X-Request-Id', _req.id as string);
     done();
+  });
+
+  // Multipart file upload — required for avatar upload endpoint (F5)
+  await fastify.register(fastifyMultipart, {
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB global limit
   });
 
   // Raw JSON body parser — required when bodyParser:false with better-auth
@@ -92,9 +104,9 @@ async function bootstrap() {
     }),
   );
 
-  // URI versioning — controllers opt-in with @Controller({ version: '1', path: '...' })
-  // Unversioned routes (health, OAuth callbacks) use VERSION_NEUTRAL
-  app.enableVersioning({ type: VersioningType.URI });
+  // URI versioning — /v1/api/... routes; defaultVersion makes /api/... backward-compatible.
+  // Unversioned routes (health, OAuth callbacks) use VERSION_NEUTRAL.
+  app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
 
   // Swagger / OpenAPI — available at /docs
   const swaggerConfig = new DocumentBuilder()

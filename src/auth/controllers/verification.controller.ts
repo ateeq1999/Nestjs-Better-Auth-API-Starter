@@ -29,7 +29,7 @@ import { callAuthHandler } from '../utils/auth-handler.util';
  */
 @ApiTags('Verification')
 @Throttle({ default: { ttl: 60_000, limit: 10 } })
-@Controller('api/auth')
+@Controller({ version: '1', path: 'api/auth' })
 export class VerificationController {
   /**
    * POST /api/auth/verify-email

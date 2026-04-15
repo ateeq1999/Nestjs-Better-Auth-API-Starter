@@ -20,7 +20,7 @@ class UserWrapper {
 @ApiTags('User')
 @ApiCookieAuth('better-auth.session_token')
 @UseGuards(AuthGuard)
-@Controller('api/users')
+@Controller({ version: '1', path: 'api/users' })
 export class UserController {
   /**
    * GET /api/users/me

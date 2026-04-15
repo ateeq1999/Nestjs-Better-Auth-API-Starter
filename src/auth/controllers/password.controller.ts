@@ -39,7 +39,7 @@ import { hashPassword, verifyPassword } from '../password.service';
  */
 @ApiTags('Password')
 @Throttle({ default: { ttl: 60_000, limit: 10 } })
-@Controller('api/auth')
+@Controller({ version: '1', path: 'api/auth' })
 export class PasswordController {
   /**
    * POST /api/auth/forget-password

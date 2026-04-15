@@ -4,6 +4,9 @@ import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { AuthModule } from './auth/auth.module';
 import { HealthModule } from './health/health.module';
+import { UserModule } from './users/user.module';
+import { AuditModule } from './audit/audit.module';
+import { AppConfigModule } from './config/config.module';
 import { validateEnv } from './config/env.config';
 
 @Module({
@@ -19,7 +22,10 @@ import { validateEnv } from './config/env.config';
         limit: 100,
       },
     ]),
+    AppConfigModule,
+    AuditModule,
     AuthModule,
+    UserModule,
     HealthModule,
   ],
   providers: [

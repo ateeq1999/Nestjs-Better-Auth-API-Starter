@@ -1,10 +1,10 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, VERSION_NEUTRAL } from '@nestjs/common';
 import { HealthCheck, HealthCheckService } from '@nestjs/terminus';
 import { ApiTags } from '@nestjs/swagger';
 import { DrizzleHealthIndicator } from './drizzle-health.indicator';
 
 @ApiTags('health')
-@Controller('health')
+@Controller({ version: VERSION_NEUTRAL, path: 'health' })
 export class HealthController {
   constructor(
     private health: HealthCheckService,
