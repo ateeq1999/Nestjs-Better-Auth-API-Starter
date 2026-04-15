@@ -32,6 +32,25 @@ export const auth = betterAuth({
       });
     },
   },
+  /**
+   * Google OAuth — only active when both env vars are present.
+   * Callback URL to register in Google Cloud Console:
+   *   {BETTER_AUTH_URL}/api/auth/callback/google
+   *
+   * Flow (handled automatically by the catch-all AuthController):
+   *   GET /api/auth/sign-in/social?provider=google  →  redirects to Google
+   *   GET /api/auth/callback/google                 →  exchanges code, creates session
+   */
+  socialProviders: {
+    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+      ? {
+          google: {
+            clientId: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+          },
+        }
+      : {}),
+  },
   session: {
     expiresIn: 60 * 60 * 24 * 7,
     updateAge: 60 * 60 * 24,
@@ -40,7 +59,9 @@ export const auth = betterAuth({
       maxAge: 5 * 60,
     },
   },
-  trustedOrigins: ['http://localhost:5173', 'http://localhost:3000'],
+  trustedOrigins: (process.env.CORS_ORIGINS ?? 'http://localhost:5173,http://localhost:3000')
+    .split(',')
+    .map((o) => o.trim()),
   baseURL: process.env.BETTER_AUTH_URL || 'http://localhost:5555',
 });
 
