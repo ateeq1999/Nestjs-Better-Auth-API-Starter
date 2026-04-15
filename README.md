@@ -1,6 +1,6 @@
 # NestJS Better-Auth API Starter
 
-A production-ready NestJS API starter with a complete authentication system powered by [better-auth](https://better-auth.com). Built on Fastify for performance, Drizzle ORM for type-safe database access, and PostgreSQL for persistence.
+A production-ready NestJS API starter with a complete authentication system powered by [better-auth](https://better-auth.com). Built on Fastify for performance, Drizzle ORM for type-safe database access, and PostgreSQL for persistence. Designed to serve both web (cookie-based) and mobile clients (Bearer token) from a single API.
 
 ---
 
@@ -22,20 +22,50 @@ A production-ready NestJS API starter with a complete authentication system powe
 
 ## Features
 
+### Auth
 - **Email + password auth** — sign-up, sign-in, sign-out
 - **Email verification** — required before sign-in; re-sendable via authenticated endpoint
 - **Password reset** — forget-password / reset-password flow via email token
 - **Password change** — authenticated endpoint that verifies the current password first
 - **Google OAuth** — optional; activates automatically when env vars are set
 - **Session management** — cookie-based sessions managed by better-auth
+
+### Security
 - **Protected routes** — `AuthGuard` + `@CurrentUser()` decorator
 - **Rate limiting** — 100 req/min globally; 20 req/min on auth; 10 req/min on password endpoints
 - **CORS** — configurable per-environment via `CORS_ORIGINS`
 - **Input validation** — global `ValidationPipe` (whitelist + forbidNonWhitelisted)
+- **Env validation** — startup throws with a clear message if required vars are missing
+
+### Developer Experience
 - **Consistent errors** — global exception filter returns `{ statusCode, message, error, timestamp }`
 - **Health check** — `GET /health` with live PostgreSQL connectivity probe
-- **Env validation** — startup throws with a clear message if required vars are missing
 - **OpenAPI docs** — Swagger UI at `/docs` with per-endpoint schemas and response types
+
+### Planned — Mobile Auth (Flutter / React Native / any HTTP client)
+- **Bearer token support** — `Authorization: Bearer <token>` alongside cookie flow
+- **Token refresh** — silent access-token renewal without re-login
+- **Device token registration** — store FCM/APNs tokens per-user for push notifications
+- **Apple Sign-In** — required by App Store when any social login is offered on iOS
+- **Deep link callback allowlist** — validate `callbackURL` for `myapp://` schemes
+- **API versioning** — `/api/v1/...` prefix for non-breaking evolution across app versions
+
+### Planned — Security Hardening
+- **`@fastify/helmet`** — CSP, HSTS, X-Frame-Options, and other security headers
+- **Account lockout** — lock after N failed sign-ins, unlock via email token
+- **CSRF protection** — better-auth `csrf: true` for cookie-based flows
+- **Two-factor authentication (TOTP)** — authenticator-app support via better-auth plugin
+- **Audit log** — record auth events (sign-in, password change, etc.) with IP + user agent
+- **Open redirect prevention** — `callbackURL` / `redirectTo` allowlist validation
+
+### Planned — NestJS Best Practices
+- **Structured logging** — Pino/Winston with correlation IDs and request tracing
+- **`ClassSerializerInterceptor`** — automatic sensitive-field exclusion from responses
+- **Graceful shutdown** — drain in-flight requests on `SIGTERM`
+- **Redis session cache** — avoid per-request DB hit on protected routes
+- **BullMQ email queue** — decouple SMTP from the request path
+- **Unit + E2E tests** — guards, filters, services, and full auth flows
+- **Docker support** — `Dockerfile` + `.dockerignore` for the application
 
 ---
 
@@ -140,8 +170,10 @@ Starts:
 ### 4. Push the database schema
 
 ```bash
-pnpm db:push        # dev shortcut — no migration files
-# or for production-style migrations:
+# Development (no migration files):
+pnpm db:push
+
+# Production-style (generates versioned migration files):
 pnpm db:generate && pnpm db:migrate
 ```
 
@@ -274,6 +306,20 @@ Register the new controller in the relevant module and it is ready to use.
 
 ---
 
+## Mobile Client Integration
+
+This API is designed to support mobile clients (Flutter, React Native, or any HTTP client) alongside web clients. The Bearer token flow (planned, see `todo.md` P8) will allow mobile clients to authenticate without relying on cookies:
+
+```
+POST /api/auth/sign-in
+→ { token: "...", user: { ... } }    ← Bearer flow (planned)
+→ Set-Cookie: better-auth.session_token=...  ← Cookie flow (current)
+```
+
+Mobile clients should send `Authorization: Bearer <token>` on protected requests once the Bearer plugin is implemented. Until then, cookie-based auth works for clients that support cookie jars (e.g. Dio with `CookieJar`).
+
+---
+
 ## Database Commands
 
 ```bash
@@ -299,6 +345,12 @@ pnpm test          # unit tests
 pnpm test:e2e      # end-to-end tests
 pnpm test:cov      # coverage report
 ```
+
+---
+
+## Roadmap
+
+See [todo.md](./todo.md) for the full improvement tracker with status on all planned items across security hardening (P6), NestJS best practices (P7), and mobile auth features (P8).
 
 ---
 

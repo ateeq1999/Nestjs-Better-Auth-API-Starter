@@ -1,15 +1,17 @@
 import 'dotenv/config';
-import { NestFactory } from '@nestjs/core';
+import { NestFactory, Reflector } from '@nestjs/core';
 import {
   FastifyAdapter,
   type NestFastifyApplication,
 } from '@nestjs/platform-fastify';
-import { ValidationPipe } from '@nestjs/common';
+import { ClassSerializerInterceptor, ValidationPipe, VersioningType } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import fastifyCookie from '@fastify/cookie';
 import fastifyCors from '@fastify/cors';
+import fastifyHelmet from '@fastify/helmet';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './common/filters/http-exception.filter';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 
 async function bootstrap() {
   const cookieSecret = process.env.COOKIE_SECRET;
@@ -19,9 +21,13 @@ async function bootstrap() {
 
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
-    new FastifyAdapter(),
+    // genReqId attaches a unique ID to every request — forwarded as X-Request-Id
+    new FastifyAdapter({ genReqId: () => crypto.randomUUID() }),
     { bodyParser: false },
   );
+
+  // Graceful shutdown — drain in-flight requests on SIGTERM / SIGINT
+  app.enableShutdownHooks();
 
   /**
    * Use the raw Fastify instance for plugin registration to avoid the
@@ -31,6 +37,12 @@ async function bootstrap() {
    */
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const fastify = app.getHttpAdapter().getInstance();
+
+  // Security headers — helmet sets CSP, HSTS, X-Frame-Options, etc.
+  await fastify.register(fastifyHelmet, {
+    // Relax CSP for Swagger UI (inline scripts + styles are required)
+    contentSecurityPolicy: process.env.NODE_ENV === 'production',
+  });
 
   await fastify.register(fastifyCookie, {
     secret: cookieSecret || 'dev-cookie-secret-change-in-production',
@@ -42,6 +54,12 @@ async function bootstrap() {
   await fastify.register(fastifyCors, {
     origin: allowedOrigins,
     credentials: true,
+  });
+
+  // Forward the Fastify request ID as a response header for client-side tracing
+  fastify.addHook('onSend', (_req, reply, _payload, done) => {
+    void reply.header('X-Request-Id', _req.id as string);
+    done();
   });
 
   // Raw JSON body parser — required when bodyParser:false with better-auth
@@ -59,6 +77,12 @@ async function bootstrap() {
 
   app.useGlobalFilters(new GlobalExceptionFilter());
 
+  // ClassSerializerInterceptor — honours @Exclude() / @Expose() on response DTOs
+  app.useGlobalInterceptors(
+    new ClassSerializerInterceptor(app.get(Reflector)),
+    new LoggingInterceptor(),
+  );
+
   // Global validation — strips unknown fields, throws on invalid input
   app.useGlobalPipes(
     new ValidationPipe({
@@ -68,14 +92,19 @@ async function bootstrap() {
     }),
   );
 
+  // URI versioning — controllers opt-in with @Controller({ version: '1', path: '...' })
+  // Unversioned routes (health, OAuth callbacks) use VERSION_NEUTRAL
+  app.enableVersioning({ type: VersioningType.URI });
+
   // Swagger / OpenAPI — available at /docs
   const swaggerConfig = new DocumentBuilder()
     .setTitle('NestJS Better-Auth API')
     .setDescription(
-      'Full-auth API starter — sign-up, sign-in, email verification, password reset, Google OAuth',
+      'Full-auth API starter — sign-up, sign-in, email verification, password reset, Google OAuth, Bearer token (mobile)',
     )
     .setVersion('1.0')
     .addCookieAuth('better-auth.session_token')
+    .addBearerAuth({ type: 'http', scheme: 'bearer' }, 'bearer-token')
     .build();
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('docs', app, document);

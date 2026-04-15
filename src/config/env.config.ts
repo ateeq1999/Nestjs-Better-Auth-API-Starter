@@ -11,5 +11,15 @@ export function validateEnv(config: Record<string, unknown>) {
     }
   }
 
+  // Prevent wildcard CORS in production — it disables all origin protection
+  if (config['NODE_ENV'] === 'production') {
+    const origins = String(config['CORS_ORIGINS'] ?? '');
+    if (origins.includes('*')) {
+      throw new Error(
+        'CORS_ORIGINS must not contain "*" in production. Set explicit allowed origins.',
+      );
+    }
+  }
+
   return config;
 }

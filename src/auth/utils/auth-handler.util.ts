@@ -31,10 +31,28 @@ export async function callAuthHandler(
   const source = new URL(req.url, baseUrl);
   source.searchParams.forEach((value, key) => target.searchParams.set(key, value));
 
-  // Forward all incoming headers
+  // Forward request headers — strip hop-by-hop and internal proxy headers
+  // to prevent header injection attacks from upstream proxies or clients.
+  const BLOCKED_HEADERS = new Set([
+    'x-forwarded-for',
+    'x-forwarded-host',
+    'x-forwarded-proto',
+    'x-forwarded-port',
+    'x-real-ip',
+    'x-cluster-client-ip',
+    'forwarded',
+    'via',
+    'proxy-authorization',
+    'proxy-connection',
+    'te',
+    'trailers',
+    'transfer-encoding',
+    'upgrade',
+  ]);
+
   const headers = new Headers();
   for (const [key, value] of Object.entries(req.headers)) {
-    if (value !== undefined) {
+    if (value !== undefined && !BLOCKED_HEADERS.has(key.toLowerCase())) {
       headers.set(key, Array.isArray(value) ? value.join(', ') : String(value));
     }
   }
