@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
-import { ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { AuthModule } from './auth/auth.module';
+import { HealthModule } from './health/health.module';
 import { validateEnv } from './config/env.config';
 
 @Module({
@@ -18,6 +20,11 @@ import { validateEnv } from './config/env.config';
       },
     ]),
     AuthModule,
+    HealthModule,
+  ],
+  providers: [
+    // Apply ThrottlerGuard globally so every route is rate-limited by default
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
   ],
 })
 export class AppModule {}

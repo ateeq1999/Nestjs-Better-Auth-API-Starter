@@ -1,4 +1,5 @@
 import { All, Controller, Req, Res } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { auth } from './auth.config';
 
@@ -16,6 +17,8 @@ import { auth } from './auth.config';
  *   POST /api/auth/forget-password
  *   POST /api/auth/reset-password
  */
+// 20 requests per minute on all auth routes (sign-in, forget-password, etc.)
+@Throttle({ default: { ttl: 60_000, limit: 20 } })
 @Controller('api/auth')
 export class AuthController {
   @All('*')

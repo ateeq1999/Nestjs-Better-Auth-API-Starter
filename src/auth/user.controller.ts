@@ -3,48 +3,34 @@ import {
   Get,
   Post,
   Body,
-  Req,
   HttpStatus,
   HttpException,
   UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
-import type { FastifyRequest } from 'fastify';
-import { auth } from './auth.config';
-import { user, account } from '../db/schema';
+import { AuthGuard } from '../common/guards/auth.guard';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { account } from '../db/schema';
 import { db } from '../db';
 import { eq } from 'drizzle-orm';
 import { hashPassword, verifyPassword } from './password.service';
 import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Controller('api/users')
+@UseGuards(AuthGuard)
 export class UserController {
   @Get('me')
-  async getCurrentUser(@Req() req: FastifyRequest) {
-    const sessionData = await auth.api.getSession({
-      headers: new Headers({ cookie: req.headers.cookie ?? '' }),
-    });
-
-    if (!sessionData) {
-      return { user: null };
-    }
-
-    const foundUser = await db.query.user.findFirst({
-      where: eq(user.id, sessionData.user.id),
-    });
-
-    if (!foundUser) {
-      return { user: null };
-    }
-
+  getCurrentUser(@CurrentUser() currentUser: { id: string; name: string; email: string; emailVerified: boolean; image: string | null; createdAt: Date; updatedAt: Date }) {
+    // Session already validated by AuthGuard — just return the user from context
     return {
       user: {
-        id: foundUser.id,
-        name: foundUser.name,
-        email: foundUser.email,
-        emailVerified: foundUser.emailVerified,
-        image: foundUser.image,
-        createdAt: foundUser.createdAt,
-        updatedAt: foundUser.updatedAt,
+        id: currentUser.id,
+        name: currentUser.name,
+        email: currentUser.email,
+        emailVerified: currentUser.emailVerified,
+        image: currentUser.image,
+        createdAt: currentUser.createdAt,
+        updatedAt: currentUser.updatedAt,
       },
     };
   }
@@ -52,25 +38,16 @@ export class UserController {
   @Post('change-password')
   async changePassword(
     @Body() body: ChangePasswordDto,
-    @Req() req: FastifyRequest,
+    @CurrentUser() currentUser: { id: string },
   ) {
-    const sessionData = await auth.api.getSession({
-      headers: new Headers({ cookie: req.headers.cookie ?? '' }),
-    });
-
-    if (!sessionData) {
-      throw new UnauthorizedException();
-    }
-
     const foundAccount = await db.query.account.findFirst({
-      where: eq(account.userId, sessionData.user.id),
+      where: eq(account.userId, currentUser.id),
     });
 
     if (!foundAccount?.password) {
       throw new HttpException('No password set on this account', HttpStatus.BAD_REQUEST);
     }
 
-    // P0 fix: verify current password before allowing the change
     const isValid = await verifyPassword(body.currentPassword, foundAccount.password);
     if (!isValid) {
       throw new UnauthorizedException('Current password is incorrect');
