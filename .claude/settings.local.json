@@ -10,7 +10,8 @@
       "Bash(node -e ' *)",
       "Bash(npx ts-node -e ' *)",
       "Bash(npx tsx -e ' *)",
-      "Bash(node --input-type=module)"
+      "Bash(node --input-type=module)",
+      "Bash(grep -v \"^$\")"
     ]
   }
 }

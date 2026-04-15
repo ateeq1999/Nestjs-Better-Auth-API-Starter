@@ -1,20 +1,20 @@
 import { Module } from '@nestjs/common';
 import { CacheModule } from '@nestjs/cache-manager';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { createKeyvAdapter } from '@nestjs/cache-manager';
 import KeyvRedis from '@keyv/redis';
+import Keyv from 'keyv';
 
 /**
- * Redis-backed cache module.
+ * Redis-backed session cache (N12).
  *
- * Used primarily by AuthGuard (N12) to cache session lookups so that
- * every request to a protected route does not hit the database.
+ * When REDIS_URL is set, sessions validated by AuthGuard are cached for 4 minutes,
+ * avoiding a database hit on every authenticated request.
  *
- * Cache TTL is set to 4 minutes — just under better-auth's cookieCache.maxAge
- * of 5 minutes, so the cached session always reflects the live session state.
+ * When REDIS_URL is not set (e.g. local dev without Docker), the module falls back
+ * to the default in-memory store — no code changes required.
  *
- * Falls back gracefully to in-memory caching when REDIS_URL is not set
- * (e.g. local development without Redis).
+ * Add to .env:
+ *   REDIS_URL=redis://localhost:6379
  */
 @Module({
   imports: [
@@ -24,14 +24,10 @@ import KeyvRedis from '@keyv/redis';
       inject: [ConfigService],
       useFactory: (config: ConfigService) => {
         const redisUrl = config.get<string>('REDIS_URL');
-        if (redisUrl) {
-          return {
-            stores: [createKeyvAdapter(new KeyvRedis(redisUrl))],
-            ttl: 4 * 60 * 1000, // 4 minutes in ms
-          };
-        }
-        // No Redis — use default in-memory store
-        return { ttl: 4 * 60 * 1000 };
+        const stores = redisUrl
+          ? [new Keyv({ store: new KeyvRedis(redisUrl) })]
+          : [new Keyv()];
+        return { stores, ttl: 4 * 60 * 1000 };
       },
     }),
   ],
