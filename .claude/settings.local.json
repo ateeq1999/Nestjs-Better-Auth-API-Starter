@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm add *)",
+      "Bash(pnpm ls *)",
+      "Bash(pnpm approve-builds *)",
+      "Bash(npx tsc *)",
+      "Bash(ls node_modules/fastify/*.d.ts)"
+    ]
+  }
+}

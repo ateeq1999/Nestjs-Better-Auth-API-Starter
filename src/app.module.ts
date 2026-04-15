@@ -1,10 +1,23 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { ConfigModule } from '@nestjs/config';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { AuthModule } from './auth/auth.module';
+import { validateEnv } from './config/env.config';
 
 @Module({
-  imports: [],
-  controllers: [AppController],
-  providers: [AppService],
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      validate: validateEnv,
+    }),
+    ThrottlerModule.forRoot([
+      {
+        // 100 requests per minute globally; tighten per-route where needed
+        ttl: 60_000,
+        limit: 100,
+      },
+    ]),
+    AuthModule,
+  ],
 })
 export class AppModule {}
