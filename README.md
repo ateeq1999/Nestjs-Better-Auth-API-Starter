@@ -1,38 +1,58 @@
 # NestJS Better-Auth API Starter
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.4-blue.svg)](https://www.typescriptlang.org/)
+[![Node.js 20+](https://img.shields.io/badge/Node.js-20+-green.svg)](https://nodejs.org/)
+[![Fastify](https://img.shields.io/badge/Fastify-v4-purple.svg)](https://fastify.dev/)
+[![better-auth](https://img.shields.io/badge/better--auth-1.6-orange.svg)](https://better-auth.com/)
+[![GitHub Stars](https://img.shields.io/github/stars/yourusername/nest-better-auth?style=social)](https://github.com/yourusername/nest-better-auth)
+[![Twitter Follow](https://img.shields.io/twitter/follow/yourusername?style=social)](https://twitter.com/yourusername)
+
 A production-ready NestJS API starter with a complete authentication system powered by [better-auth](https://better-auth.com). Built on Fastify for performance, Drizzle ORM for type-safe database access, and PostgreSQL for persistence. Designed to serve web (cookie-based), mobile (Bearer token), and multi-tenant clients from a single codebase.
+
+---
+
+## Documentation
+
+- [Quick Start](docs/QUICKSTART.md) - Get up and running in minutes
+- [API Reference](docs/API.md) - Complete API documentation
+- [Architecture](docs/ARCHITECTURE.md) - Technical architecture overview
+- [Configuration](docs/CONFIGURATION.md) - Environment variables and feature flags
+- [Deployment](docs/DEPLOYMENT.md) - Production deployment guide
+- [Contributing](docs/CONTRIBUTING.md) - How to contribute
 
 ---
 
 ## Stack
 
-| Layer | Technology |
-|---|---|
-| Framework | NestJS 11 + Fastify |
-| Auth | better-auth 1.6 (email, OAuth, 2FA, magic link, organization) |
-| ORM | Drizzle ORM |
-| Type safety | drizzle-zod + Zod — schemas generated from table definitions |
-| Database | PostgreSQL 16 |
-| Cache | Redis 7 + `@nestjs/cache-manager` |
-| Queue | BullMQ (async email dispatch) |
-| Validation | class-validator + class-transformer |
-| Rate limiting | `@nestjs/throttler` |
-| API docs | Swagger / OpenAPI (`/docs`) |
-| Email (dev) | Mailpit (SMTP trap) |
-| Email (templates) | Handlebars + `juice` CSS inlining |
-| Storage | `fs` / MinIO / AWS S3 / Cloudflare R2 (swappable via `STORAGE_DRIVER`) |
-| Scheduler | `@nestjs/schedule` (cron cleanup jobs) |
-| Metrics | Prometheus via `@willsoto/nestjs-prometheus` (`/metrics`) |
-| Tracing | OpenTelemetry SDK + OTLP export (opt-in) |
-| Log shipping | Pino-Loki (opt-in, requires `LOKI_URL`) |
-| Benchmark | autocannon (`pnpm bench`) |
-| Runtime | Node.js 24 / pnpm |
+| Layer             | Technology                                                             |
+| ----------------- | ---------------------------------------------------------------------- |
+| Framework         | NestJS 11 + Fastify                                                    |
+| Auth              | better-auth 1.6 (email, OAuth, 2FA, magic link, organization)          |
+| ORM               | Drizzle ORM                                                            |
+| Type safety       | drizzle-zod + Zod — schemas generated from table definitions           |
+| Database          | PostgreSQL 16                                                          |
+| Cache             | Redis 7 + `@nestjs/cache-manager`                                      |
+| Queue             | BullMQ (async email dispatch)                                          |
+| Validation        | class-validator + class-transformer                                    |
+| Rate limiting     | `@nestjs/throttler`                                                    |
+| API docs          | Swagger / OpenAPI (`/docs`)                                            |
+| Email (dev)       | Mailpit (SMTP trap)                                                    |
+| Email (templates) | Handlebars + `juice` CSS inlining                                      |
+| Storage           | `fs` / MinIO / AWS S3 / Cloudflare R2 (swappable via `STORAGE_DRIVER`) |
+| Scheduler         | `@nestjs/schedule` (cron cleanup jobs)                                 |
+| Metrics           | Prometheus via `@willsoto/nestjs-prometheus` (`/metrics`)              |
+| Tracing           | OpenTelemetry SDK + OTLP export (opt-in)                               |
+| Log shipping      | Pino-Loki (opt-in, requires `LOKI_URL`)                                |
+| Benchmark         | autocannon (`pnpm bench`)                                              |
+| Runtime           | Node.js 24 / pnpm                                                      |
 
 ---
 
 ## Features
 
 ### Authentication
+
 - **Email + password** — sign-up, sign-in, sign-out, session
 - **Email verification** — required before sign-in; resendable
 - **Password reset** — forget-password / reset-password via email token
@@ -46,6 +66,7 @@ A production-ready NestJS API starter with a complete authentication system powe
 - **Account lockout** — locks after 5 failures in 15 min; auto-unlocks after 30 min; lockout-alert email sent
 
 ### Authorization
+
 - **`AuthGuard`** — validates cookie or Bearer token; caches session in Redis to skip per-request DB hit
 - **`RolesGuard` + `@Roles()`** — RBAC based on `user.role` (`user` / `admin` / `moderator`)
 - **`OrganizationGuard`** — reads `X-Organization-Id` header, resolves org, verifies membership, attaches `req.organization`
@@ -55,6 +76,7 @@ A production-ready NestJS API starter with a complete authentication system powe
 - **`@CurrentOrgMember()`** — injects the user's membership record
 
 ### Security
+
 - **`@fastify/helmet`** — CSP, HSTS, X-Frame-Options, X-Content-Type-Options
 - **CORS** — configurable per-environment; wildcard `*` blocked in production at startup
 - **CSRF protection** — better-auth handles for cookie-based flows
@@ -68,12 +90,14 @@ A production-ready NestJS API starter with a complete authentication system powe
 - **`ClassSerializerInterceptor`** — strips `@Exclude()` fields from responses globally
 
 ### Multi-tenancy
+
 - **Organization plugin** — create and manage workspaces via better-auth `organization` plugin
 - **`OrganizationGuard`** — reads `X-Organization-Id`, validates membership, scopes requests
 - **Member role gating** — `@OrgRoles('owner', 'admin')` restricts org-sensitive operations
 - Schema: `organizations`, `members`, `invitations` tables
 
 ### Mobile (Flutter / React Native)
+
 - **Bearer token auth** — full session support alongside cookie flow
 - **Token refresh** — `POST /api/auth/token/refresh`
 - **Device token registration** — `POST /v1/api/users/me/device-tokens` (FCM / APNs)
@@ -82,6 +106,7 @@ A production-ready NestJS API starter with a complete authentication system powe
 - **API versioning** — `/v1/` URI prefix; `defaultVersion` keeps `/api/...` backward-compatible
 
 ### Admin API
+
 - `GET /v1/api/admin/users` — paginated user list (cursor-based, filterable)
 - `GET /v1/api/admin/users/stats` — totals: all, banned, deleted, admins
 - `GET /v1/api/admin/users/:id` — user detail
@@ -91,27 +116,31 @@ A production-ready NestJS API starter with a complete authentication system powe
 - All admin routes require `role = admin` enforced by `RolesGuard`
 
 ### Pagination
+
 - **Cursor-based** — `CursorPaginationDto` (`limit`, `cursor`), `CursorPage<T>` response shape
 - Applied to: admin user list, audit log list, device token list
 - `buildCursorPage()` utility — fetch `limit + 1`, detect `hasNextPage`, return `nextCursor`
 
 ### File Storage (swappable adapters)
-| Driver | When to use |
-|---|---|
-| `fs` (default) | Local dev / single-node |
-| `minio` | Self-hosted S3-compatible (docker compose) |
-| `s3` | AWS S3 |
-| `r2` | Cloudflare R2 (same adapter, different endpoint) |
+
+| Driver         | When to use                                      |
+| -------------- | ------------------------------------------------ |
+| `fs` (default) | Local dev / single-node                          |
+| `minio`        | Self-hosted S3-compatible (docker compose)       |
+| `s3`           | AWS S3                                           |
+| `r2`           | Cloudflare R2 (same adapter, different endpoint) |
 
 Select with `STORAGE_DRIVER=minio`. All adapters implement the same `StorageService` interface: `upload()`, `delete()`, `getUrl()`.
 
 ### Email Templates
+
 - **Handlebars** templates with `juice` CSS inlining (Gmail / Outlook compatible)
 - Templates: `welcome`, `email-verification`, `password-reset`, `magic-link`, `lockout-alert`
 - `text/plain` fallback generated automatically by stripping HTML tags
 - Dev preview: `GET /dev/email/:template` renders any template in the browser
 
 ### Observability
+
 - **Prometheus** — `/metrics` endpoint with default Node.js metrics + custom auth event counters and HTTP duration histogram
 - **OpenTelemetry** — `src/tracing.ts`; activated by `OTEL_ENABLED=true`; OTLP export to Tempo
 - **Pino-Loki** — structured log shipping; activated by setting `LOKI_URL`
@@ -119,15 +148,18 @@ Select with `STORAGE_DRIVER=minio`. All adapters implement the same `StorageServ
 - **Correlation IDs** — `X-Request-Id` flows through every log line and trace span
 
 ### Scheduled Jobs
+
 - Purge expired sessions older than 30 days — daily at 02:00 UTC
 - Purge login attempts older than 90 days — weekly on Sunday at 03:00 UTC
 - Purge audit logs older than 1 year — monthly on the 1st at 04:00 UTC
 - Log active session count — daily at midnight UTC
 
 ### Feature Flags
+
 Every optional feature can be turned on/off without rebuilding. See [Feature Flags](#feature-flags) below.
 
 ### Developer Experience
+
 - **`pnpm dev`** — one command: docker compose up → wait for DB → migrate → seed → watch server
 - **Response envelope** — every API response is wrapped in `{ success, data, meta }` by default; opt out with `@SkipEnvelope()`
 - **Consistent errors** — global exception filter returns `{ success: false, error: { code, message, details? }, meta: { timestamp, requestId } }`
@@ -311,6 +343,7 @@ Request → ValidationPipe → DTO → callAuthHandler() → better-auth → Res
 Every controller that returns data directly (not proxying through better-auth) is automatically wrapped by `ResponseEnvelopeInterceptor`:
 
 **Success — single resource**
+
 ```json
 {
   "success": true,
@@ -320,19 +353,25 @@ Every controller that returns data directly (not proxying through better-auth) i
 ```
 
 **Success — paginated list**
+
 ```json
 {
   "success": true,
-  "data": [ { "id": "..." }, { "id": "..." } ],
+  "data": [{ "id": "..." }, { "id": "..." }],
   "meta": {
     "timestamp": "2026-04-16T10:00:00.000Z",
     "requestId": "abc-123",
-    "pagination": { "limit": 20, "hasNextPage": true, "nextCursor": "cursor-xyz" }
+    "pagination": {
+      "limit": 20,
+      "hasNextPage": true,
+      "nextCursor": "cursor-xyz"
+    }
   }
 }
 ```
 
 **Error**
+
 ```json
 {
   "success": false,
@@ -380,15 +419,15 @@ findAll(): Promise<CursorPage<PostResponse>> { ... }
 `apiResponseSchema<T>(dataSchema)` produces a discriminated-union Zod schema:
 
 ```typescript
-import { apiResponseSchema } from '@common/dto/api-response.dto';
-import { z } from 'zod';
+import { apiResponseSchema } from "@common/dto/api-response.dto";
+import { z } from "zod";
 
 const postSchema = z.object({ id: z.string(), title: z.string() });
 const responseSchema = apiResponseSchema(postSchema);
 
 const result = responseSchema.parse(await res.json());
 if (result.success) {
-  console.log(result.data.title);  // fully typed
+  console.log(result.data.title); // fully typed
 } else {
   console.error(result.error.code, result.error.message);
 }
@@ -432,33 +471,34 @@ pnpm dev
 ```
 
 This single command:
+
 1. Starts Docker services (Postgres, Redis, Mailpit, MinIO)
 2. Waits for Postgres to be healthy
 3. Runs pending DB migrations
 4. Seeds dev data (5 users + sample organization)
 5. Starts the NestJS dev server in watch mode
 
-| URL | Purpose |
-|---|---|
-| `http://localhost:5555` | API |
-| `http://localhost:5555/docs` | Swagger UI |
-| `http://localhost:5555/health` | Health check |
-| `http://localhost:5555/metrics` | Prometheus metrics |
+| URL                                       | Purpose                |
+| ----------------------------------------- | ---------------------- |
+| `http://localhost:5555`                   | API                    |
+| `http://localhost:5555/docs`              | Swagger UI             |
+| `http://localhost:5555/health`            | Health check           |
+| `http://localhost:5555/metrics`           | Prometheus metrics     |
 | `http://localhost:5555/dev/email/welcome` | Email template preview |
-| `http://localhost:8025` | Mailpit email inbox |
-| `http://localhost:8080` | Adminer (DB browser) |
-| `http://localhost:5540` | RedisInsight |
-| `http://localhost:9001` | MinIO console |
+| `http://localhost:8025`                   | Mailpit email inbox    |
+| `http://localhost:8080`                   | Adminer (DB browser)   |
+| `http://localhost:5540`                   | RedisInsight           |
+| `http://localhost:9001`                   | MinIO console          |
 
 ### Seed accounts
 
-| Role | Email | Password |
-|---|---|---|
-| `admin` | `admin@example.com` | `Admin123!` |
-| `moderator` | `moderator@example.com` | `Mod123!` |
-| `user` | `alice@example.com` | `Alice123!` |
-| `user` | `bob@example.com` | `Bob123!` |
-| `user` | `charlie@example.com` | `Charlie123!` |
+| Role        | Email                   | Password      |
+| ----------- | ----------------------- | ------------- |
+| `admin`     | `admin@example.com`     | `Admin123!`   |
+| `moderator` | `moderator@example.com` | `Mod123!`     |
+| `user`      | `alice@example.com`     | `Alice123!`   |
+| `user`      | `bob@example.com`       | `Bob123!`     |
+| `user`      | `charlie@example.com`   | `Charlie123!` |
 
 ---
 
@@ -575,10 +615,10 @@ export const featureDefaults = {
   rateLimiting: true,
   auditLog: true,
   scheduler: true,
-  emailPreview: true,  // dev only — always off in production
+  emailPreview: true, // dev only — always off in production
   metrics: true,
-  tracing: false,      // opt-in — heavy
-  logShipping: false,  // opt-in — requires LOKI_URL
+  tracing: false, // opt-in — heavy
+  logShipping: false, // opt-in — requires LOKI_URL
 };
 ```
 
@@ -603,90 +643,90 @@ All routes are available at both `/v1/api/...` (explicit version) and `/api/...`
 
 ### Identity
 
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| `POST` | `/api/auth/sign-up` | — | Register with email + password |
-| `POST` | `/api/auth/sign-in` | — | Sign in; returns cookie (web) or Bearer (`?token=true`) |
-| `POST` | `/api/auth/sign-out` | ✓ | Invalidate session |
-| `GET` | `/api/auth/session` | ✓ | Get current session + user |
+| Method | Path                 | Auth | Description                                             |
+| ------ | -------------------- | ---- | ------------------------------------------------------- |
+| `POST` | `/api/auth/sign-up`  | —    | Register with email + password                          |
+| `POST` | `/api/auth/sign-in`  | —    | Sign in; returns cookie (web) or Bearer (`?token=true`) |
+| `POST` | `/api/auth/sign-out` | ✓    | Invalidate session                                      |
+| `GET`  | `/api/auth/session`  | ✓    | Get current session + user                              |
 
 ### Password
 
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| `POST` | `/api/auth/forget-password` | — | Send password-reset email |
-| `POST` | `/api/auth/reset-password` | — | Reset password with token from email |
-| `POST` | `/api/auth/change-password` | ✓ | Change password (verifies current first) |
+| Method | Path                        | Auth | Description                              |
+| ------ | --------------------------- | ---- | ---------------------------------------- |
+| `POST` | `/api/auth/forget-password` | —    | Send password-reset email                |
+| `POST` | `/api/auth/reset-password`  | —    | Reset password with token from email     |
+| `POST` | `/api/auth/change-password` | ✓    | Change password (verifies current first) |
 
 ### Verification
 
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| `POST` | `/api/auth/verify-email` | — | Verify email with token from inbox |
-| `POST` | `/api/auth/send-verification-email` | ✓ | Re-send the verification email |
+| Method | Path                                | Auth | Description                        |
+| ------ | ----------------------------------- | ---- | ---------------------------------- |
+| `POST` | `/api/auth/verify-email`            | —    | Verify email with token from inbox |
+| `POST` | `/api/auth/send-verification-email` | ✓    | Re-send the verification email     |
 
-### Magic Link *(feature: `magicLink`)*
+### Magic Link _(feature: `magicLink`)_
 
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| `POST` | `/api/auth/magic-link/send-magic-link` | — | Send a sign-in link to email (5 req/15 min) |
-| `GET` | `/api/auth/magic-link/verify-magic-link?token=` | — | Verify link and create session |
+| Method | Path                                            | Auth | Description                                 |
+| ------ | ----------------------------------------------- | ---- | ------------------------------------------- |
+| `POST` | `/api/auth/magic-link/send-magic-link`          | —    | Send a sign-in link to email (5 req/15 min) |
+| `GET`  | `/api/auth/magic-link/verify-magic-link?token=` | —    | Verify link and create session              |
 
-### Two-Factor Auth *(feature: `twoFactor`)*
+### Two-Factor Auth _(feature: `twoFactor`)_
 
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| `POST` | `/api/auth/two-factor/enable` | ✓ | Enable TOTP; returns QR code URI |
-| `POST` | `/api/auth/two-factor/disable` | ✓ | Disable TOTP |
-| `POST` | `/api/auth/two-factor/verify-totp` | ✓ | Verify TOTP code on sign-in |
+| Method | Path                               | Auth | Description                      |
+| ------ | ---------------------------------- | ---- | -------------------------------- |
+| `POST` | `/api/auth/two-factor/enable`      | ✓    | Enable TOTP; returns QR code URI |
+| `POST` | `/api/auth/two-factor/disable`     | ✓    | Disable TOTP                     |
+| `POST` | `/api/auth/two-factor/verify-totp` | ✓    | Verify TOTP code on sign-in      |
 
-### OAuth *(feature: `socialAuth`)*
+### OAuth _(feature: `socialAuth`)_
 
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| `GET` | `/api/auth/sign-in/social?provider=google` | — | Redirect to Google consent |
-| `GET` | `/api/auth/sign-in/social?provider=apple` | — | Redirect to Apple Sign-In |
-| `GET` | `/api/auth/callback/:provider` | — | OAuth callback |
+| Method | Path                                       | Auth | Description                |
+| ------ | ------------------------------------------ | ---- | -------------------------- |
+| `GET`  | `/api/auth/sign-in/social?provider=google` | —    | Redirect to Google consent |
+| `GET`  | `/api/auth/sign-in/social?provider=apple`  | —    | Redirect to Apple Sign-In  |
+| `GET`  | `/api/auth/callback/:provider`             | —    | OAuth callback             |
 
 ### Token (Bearer)
 
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| `POST` | `/api/auth/token` | — | Exchange credentials for Bearer token |
-| `POST` | `/api/auth/token/refresh` | Bearer | Refresh an expiring access token |
+| Method | Path                      | Auth   | Description                           |
+| ------ | ------------------------- | ------ | ------------------------------------- |
+| `POST` | `/api/auth/token`         | —      | Exchange credentials for Bearer token |
+| `POST` | `/api/auth/token/refresh` | Bearer | Refresh an expiring access token      |
 
 ### User
 
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| `GET` | `/api/users/me` | ✓ | Get authenticated user profile |
-| `POST` | `/api/users/me/avatar` | ✓ | Upload profile picture (multipart, 5 MB) |
-| `POST` | `/api/users/me/device-tokens` | ✓ | Register push notification token |
-| `DELETE` | `/api/users/me/device-tokens/:id` | ✓ | Remove a device token |
+| Method   | Path                              | Auth | Description                              |
+| -------- | --------------------------------- | ---- | ---------------------------------------- |
+| `GET`    | `/api/users/me`                   | ✓    | Get authenticated user profile           |
+| `POST`   | `/api/users/me/avatar`            | ✓    | Upload profile picture (multipart, 5 MB) |
+| `POST`   | `/api/users/me/device-tokens`     | ✓    | Register push notification token         |
+| `DELETE` | `/api/users/me/device-tokens/:id` | ✓    | Remove a device token                    |
 
-### Admin *(requires `role = admin`)*
+### Admin _(requires `role = admin`)_
 
-| Method | Path | Description |
-|---|---|---|
-| `GET` | `/api/admin/users/stats` | Totals: all, banned, deleted, admins |
-| `GET` | `/api/admin/users` | Paginated user list (`?limit=&cursor=`) |
-| `GET` | `/api/admin/users/:id` | User detail |
-| `PATCH` | `/api/admin/users/:id` | Update role, ban/unban, force email verify |
-| `DELETE` | `/api/admin/users/:id` | Soft-delete (sets `deletedAt`) |
-| `GET` | `/api/admin/audit-logs` | Paginated audit log (`?userId=&limit=&cursor=`) |
+| Method   | Path                     | Description                                     |
+| -------- | ------------------------ | ----------------------------------------------- |
+| `GET`    | `/api/admin/users/stats` | Totals: all, banned, deleted, admins            |
+| `GET`    | `/api/admin/users`       | Paginated user list (`?limit=&cursor=`)         |
+| `GET`    | `/api/admin/users/:id`   | User detail                                     |
+| `PATCH`  | `/api/admin/users/:id`   | Update role, ban/unban, force email verify      |
+| `DELETE` | `/api/admin/users/:id`   | Soft-delete (sets `deletedAt`)                  |
+| `GET`    | `/api/admin/audit-logs`  | Paginated audit log (`?userId=&limit=&cursor=`) |
 
-### Organization *(feature: `organization`)*
+### Organization _(feature: `organization`)_
 
 Managed by the better-auth organization plugin catch-all. See [better-auth organization docs](https://www.better-auth.com/docs/plugins/organization) for the full endpoint list. All requests require `X-Organization-Id` header when using `OrganizationGuard`.
 
 ### Health / Observability
 
-| Method | Path | Description |
-|---|---|---|
-| `GET` | `/health` | PostgreSQL liveness check |
-| `GET` | `/metrics` | Prometheus metrics |
-| `GET` | `/dev/email/:template` | Email template preview (dev only) |
-| `GET` | `/admin/queues` | Bull Board queue UI (requires Redis) |
+| Method | Path                   | Description                          |
+| ------ | ---------------------- | ------------------------------------ |
+| `GET`  | `/health`              | PostgreSQL liveness check            |
+| `GET`  | `/metrics`             | Prometheus metrics                   |
+| `GET`  | `/dev/email/:template` | Email template preview (dev only)    |
+| `GET`  | `/admin/queues`        | Bull Board queue UI (requires Redis) |
 
 ---
 
@@ -695,11 +735,11 @@ Managed by the better-auth organization plugin catch-all. See [better-auth organ
 ### Basic auth guard
 
 ```typescript
-import { Controller, Get, UseGuards } from '@nestjs/common';
-import { AuthGuard, CurrentUser } from '../common';
+import { Controller, Get, UseGuards } from "@nestjs/common";
+import { AuthGuard, CurrentUser } from "../common";
 
 @UseGuards(AuthGuard)
-@Controller({ version: '1', path: 'api/posts' })
+@Controller({ version: "1", path: "api/posts" })
 export class PostsController {
   @Get()
   list(@CurrentUser() user: { id: string; email: string; role: string }) {
@@ -722,24 +762,28 @@ export class ReportsController { ... }
 ### Organization-scoped routes
 
 ```typescript
-import { AuthGuard, OrganizationGuard, OrgRolesGuard, OrgRoles, CurrentOrganization, CurrentOrgMember } from '../common';
-import type { Organization, Member } from '../db/schema';
+import {
+  AuthGuard,
+  OrganizationGuard,
+  OrgRolesGuard,
+  OrgRoles,
+  CurrentOrganization,
+  CurrentOrgMember,
+} from "../common";
+import type { Organization, Member } from "../db/schema";
 
 @UseGuards(AuthGuard, OrganizationGuard)
-@Controller({ version: '1', path: 'api/projects' })
+@Controller({ version: "1", path: "api/projects" })
 export class ProjectsController {
   @Get()
   list(@CurrentOrganization() org: Organization) {
     return this.projectsService.findAll(org.id);
   }
 
-  @Delete(':id')
+  @Delete(":id")
   @UseGuards(OrgRolesGuard)
-  @OrgRoles('owner', 'admin')
-  remove(
-    @CurrentOrganization() org: Organization,
-    @Param('id') id: string,
-  ) {
+  @OrgRoles("owner", "admin")
+  remove(@CurrentOrganization() org: Organization, @Param("id") id: string) {
     return this.projectsService.remove(org.id, id);
   }
 }
@@ -750,10 +794,10 @@ The client sends `X-Organization-Id: <org-id>` with every request. The guard res
 ### Using DrizzleService in a custom service
 
 ```typescript
-import { Injectable } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
-import { DrizzleService } from '../db/drizzle.service';
-import { user } from '../db/schema';
+import { Injectable } from "@nestjs/common";
+import { eq } from "drizzle-orm";
+import { DrizzleService } from "../db/drizzle.service";
+import { user } from "../db/schema";
 
 @Injectable()
 export class PostsService {
@@ -816,6 +860,7 @@ pnpm infra:logs        # tail all logs
 ```
 
 Services started by `docker-compose.yml`:
+
 - PostgreSQL 16 — port 5432
 - Redis 7 — port 6379
 - Mailpit — SMTP 1025, UI 8025
@@ -925,6 +970,7 @@ CONNECTIONS=100 DURATION=30 BASE_URL=https://api.example.com pnpm bench
 ```
 
 Uses [autocannon](https://github.com/mcollina/autocannon). Scenarios:
+
 - `health` — `GET /health` (baseline, no auth)
 - `session` — `GET /v1/api/auth/session` (auth guard fast path, expect 401)
 - `sign-in` — `POST /v1/api/auth/sign-in` with seeded credentials
@@ -993,82 +1039,82 @@ pnpm format            # prettier --write
 
 ### Core
 
-| Variable | Required | Default | Description |
-|---|---|---|---|
-| `PORT` | No | `5555` | HTTP listen port |
-| `NODE_ENV` | No | `development` | `development` or `production` |
-| `DATABASE_URL` | **Yes** | — | PostgreSQL connection string |
-| `DB_POOL_MAX` | No | `10` | Max database pool connections |
-| `BETTER_AUTH_URL` | **Yes** | — | Public base URL of this API |
-| `BETTER_AUTH_SECRET` | **Yes** | — | Secret for token signing (≥32 chars) |
-| `COOKIE_SECRET` | Prod only | — | Secret for cookie signing; required in production |
-| `CORS_ORIGINS` | No | `http://localhost:5173,...` | Comma-separated allowed origins; `*` blocked in production |
-| `ALLOWED_CALLBACK_SCHEMES` | No | — | Comma-separated custom URI schemes for OAuth deep links |
-| `APP_NAME` | No | `NestJS Better-Auth` | Shown in email templates |
+| Variable                   | Required  | Default                     | Description                                                |
+| -------------------------- | --------- | --------------------------- | ---------------------------------------------------------- |
+| `PORT`                     | No        | `5555`                      | HTTP listen port                                           |
+| `NODE_ENV`                 | No        | `development`               | `development` or `production`                              |
+| `DATABASE_URL`             | **Yes**   | —                           | PostgreSQL connection string                               |
+| `DB_POOL_MAX`              | No        | `10`                        | Max database pool connections                              |
+| `BETTER_AUTH_URL`          | **Yes**   | —                           | Public base URL of this API                                |
+| `BETTER_AUTH_SECRET`       | **Yes**   | —                           | Secret for token signing (≥32 chars)                       |
+| `COOKIE_SECRET`            | Prod only | —                           | Secret for cookie signing; required in production          |
+| `CORS_ORIGINS`             | No        | `http://localhost:5173,...` | Comma-separated allowed origins; `*` blocked in production |
+| `ALLOWED_CALLBACK_SCHEMES` | No        | —                           | Comma-separated custom URI schemes for OAuth deep links    |
+| `APP_NAME`                 | No        | `NestJS Better-Auth`        | Shown in email templates                                   |
 
-### Social Auth *(feature: `socialAuth`)*
+### Social Auth _(feature: `socialAuth`)_
 
-| Variable | Description |
-|---|---|
-| `GOOGLE_CLIENT_ID` | Enables Google OAuth when set with secret |
-| `GOOGLE_CLIENT_SECRET` | |
-| `APPLE_CLIENT_ID` | Enables Apple Sign-In when set with secret |
-| `APPLE_CLIENT_SECRET` | |
+| Variable               | Description                                |
+| ---------------------- | ------------------------------------------ |
+| `GOOGLE_CLIENT_ID`     | Enables Google OAuth when set with secret  |
+| `GOOGLE_CLIENT_SECRET` |                                            |
+| `APPLE_CLIENT_ID`      | Enables Apple Sign-In when set with secret |
+| `APPLE_CLIENT_SECRET`  |                                            |
 
 ### Email (SMTP)
 
-| Variable | Default | Description |
-|---|---|---|
-| `SMTP_HOST` | `localhost` | SMTP server hostname |
-| `SMTP_PORT` | `1025` | SMTP server port |
-| `SMTP_FROM` | `noreply@localhost` | From address |
-| `SMTP_USER` | — | SMTP auth username |
-| `SMTP_PASS` | — | SMTP auth password |
+| Variable    | Default             | Description          |
+| ----------- | ------------------- | -------------------- |
+| `SMTP_HOST` | `localhost`         | SMTP server hostname |
+| `SMTP_PORT` | `1025`              | SMTP server port     |
+| `SMTP_FROM` | `noreply@localhost` | From address         |
+| `SMTP_USER` | —                   | SMTP auth username   |
+| `SMTP_PASS` | —                   | SMTP auth password   |
 
 ### Redis
 
-| Variable | Description |
-|---|---|
+| Variable    | Description                                                   |
+| ----------- | ------------------------------------------------------------- |
 | `REDIS_URL` | e.g. `redis://localhost:6379`; enables session cache + BullMQ |
 
-### File Storage *(feature: `storage`)*
+### File Storage _(feature: `storage`)_
 
-| Variable | Description |
-|---|---|
-| `STORAGE_DRIVER` | `fs` (default) \| `minio` \| `s3` \| `r2` |
-| `MINIO_ENDPOINT`, `MINIO_PORT`, `MINIO_USE_SSL`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `MINIO_BUCKET`, `MINIO_PUBLIC_URL` | MinIO config |
-| `AWS_REGION`, `AWS_BUCKET`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_PUBLIC_URL` | S3 config |
-| `R2_ACCOUNT_ID`, `R2_BUCKET`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_PUBLIC_URL` | R2 config |
+| Variable                                                                                                                    | Description                               |
+| --------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| `STORAGE_DRIVER`                                                                                                            | `fs` (default) \| `minio` \| `s3` \| `r2` |
+| `MINIO_ENDPOINT`, `MINIO_PORT`, `MINIO_USE_SSL`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `MINIO_BUCKET`, `MINIO_PUBLIC_URL` | MinIO config                              |
+| `AWS_REGION`, `AWS_BUCKET`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_PUBLIC_URL`                                  | S3 config                                 |
+| `R2_ACCOUNT_ID`, `R2_BUCKET`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_PUBLIC_URL`                                   | R2 config                                 |
 
 ### Observability
 
-| Variable | Default | Description |
-|---|---|---|
-| `LOKI_URL` | — | Ship logs to Loki (requires `FEATURE_LOG_SHIPPING=true`) |
-| `OTEL_ENABLED` | `false` | Activate OpenTelemetry tracing (requires `FEATURE_TRACING=true`) |
-| `OTEL_SERVICE_NAME` | `nest-better-auth` | Service name in traces |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | `http://localhost:4318` | OTLP HTTP exporter URL |
+| Variable                      | Default                 | Description                                                      |
+| ----------------------------- | ----------------------- | ---------------------------------------------------------------- |
+| `LOKI_URL`                    | —                       | Ship logs to Loki (requires `FEATURE_LOG_SHIPPING=true`)         |
+| `OTEL_ENABLED`                | `false`                 | Activate OpenTelemetry tracing (requires `FEATURE_TRACING=true`) |
+| `OTEL_SERVICE_NAME`           | `nest-better-auth`      | Service name in traces                                           |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | `http://localhost:4318` | OTLP HTTP exporter URL                                           |
 
 ### Feature Flags
 
 All default to the values in `src/config/features.config.ts`. Set to `false` or `0` to disable.
 
-| Variable | Default | Controls |
-|---|---|---|
-| `FEATURE_REDIS` | `true` | Redis session cache + BullMQ |
-| `FEATURE_EMAIL_QUEUE` | `true` | Async email via BullMQ |
-| `FEATURE_TWO_FACTOR` | `true` | TOTP 2FA plugin |
-| `FEATURE_MAGIC_LINK` | `true` | Magic link plugin |
-| `FEATURE_ORGANIZATION` | `true` | Organization plugin |
-| `FEATURE_SOCIAL_AUTH` | `true` | Google / Apple OAuth |
-| `FEATURE_SWAGGER` | `true` | API docs at `/docs` |
-| `FEATURE_RATE_LIMITING` | `true` | Throttler guard |
-| `FEATURE_AUDIT_LOG` | `true` | Auth event audit trail |
-| `FEATURE_SCHEDULER` | `true` | Cleanup cron jobs |
-| `FEATURE_EMAIL_PREVIEW` | `true` | `/dev/email` preview route (dev only) |
-| `FEATURE_METRICS` | `true` | Prometheus `/metrics` |
-| `FEATURE_TRACING` | `false` | OpenTelemetry (opt-in) |
-| `FEATURE_LOG_SHIPPING` | `false` | Pino-Loki (opt-in) |
+| Variable                | Default | Controls                              |
+| ----------------------- | ------- | ------------------------------------- |
+| `FEATURE_REDIS`         | `true`  | Redis session cache + BullMQ          |
+| `FEATURE_EMAIL_QUEUE`   | `true`  | Async email via BullMQ                |
+| `FEATURE_TWO_FACTOR`    | `true`  | TOTP 2FA plugin                       |
+| `FEATURE_MAGIC_LINK`    | `true`  | Magic link plugin                     |
+| `FEATURE_ORGANIZATION`  | `true`  | Organization plugin                   |
+| `FEATURE_SOCIAL_AUTH`   | `true`  | Google / Apple OAuth                  |
+| `FEATURE_SWAGGER`       | `true`  | API docs at `/docs`                   |
+| `FEATURE_RATE_LIMITING` | `true`  | Throttler guard                       |
+| `FEATURE_AUDIT_LOG`     | `true`  | Auth event audit trail                |
+| `FEATURE_SCHEDULER`     | `true`  | Cleanup cron jobs                     |
+| `FEATURE_EMAIL_PREVIEW` | `true`  | `/dev/email` preview route (dev only) |
+| `FEATURE_METRICS`       | `true`  | Prometheus `/metrics`                 |
+| `FEATURE_TRACING`       | `false` | OpenTelemetry (opt-in)                |
+| `FEATURE_LOG_SHIPPING`  | `false` | Pino-Loki (opt-in)                    |
 
 ---
 
@@ -1087,13 +1133,19 @@ The examples below use a `posts` feature as a concrete reference.
 Add a new table to [src/db/schema.ts](src/db/schema.ts):
 
 ```typescript
-export const post = pgTable('posts', {
-  id:        uuid('id').primaryKey().defaultRandom(),
-  userId:    text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
-  title:     text('title').notNull(),
-  body:      text('body').notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+export const post = pgTable("posts", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  body: text("body").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
 });
 ```
 
@@ -1111,12 +1163,14 @@ pnpm db:push       # idempotent, skips migration files
 Add to [src/db/zod-schemas.ts](src/db/zod-schemas.ts) using `drizzle-zod`:
 
 ```typescript
-import { createSelectSchema, createInsertSchema } from 'drizzle-zod';
-import { post } from './schema';
+import { createSelectSchema, createInsertSchema } from "drizzle-zod";
+import { post } from "./schema";
 
 export const selectPostSchema = createSelectSchema(post);
 export const insertPostSchema = createInsertSchema(post);
-export const updatePostSchema = insertPostSchema.partial().omit({ id: true, userId: true, createdAt: true });
+export const updatePostSchema = insertPostSchema
+  .partial()
+  .omit({ id: true, userId: true, createdAt: true });
 
 export type SelectPost = typeof selectPostSchema._type;
 export type InsertPost = typeof insertPostSchema._type;
@@ -1144,11 +1198,11 @@ src/posts/
 Inject `DrizzleService`. Use Drizzle's query builder — no raw SQL unless genuinely necessary:
 
 ```typescript
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { eq, and, desc } from 'drizzle-orm';
-import { DrizzleService } from '../db/drizzle.service';
-import { post } from '../db/schema';
-import type { SelectPost } from '../db/zod-schemas';
+import { Injectable, NotFoundException } from "@nestjs/common";
+import { eq, and, desc } from "drizzle-orm";
+import { DrizzleService } from "../db/drizzle.service";
+import { post } from "../db/schema";
+import type { SelectPost } from "../db/zod-schemas";
 
 @Injectable()
 export class PostsService {
@@ -1179,7 +1233,7 @@ export class PostsService {
 Define exactly what the client receives. Use `@Exclude()` on fields you never want to expose:
 
 ```typescript
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty } from "@nestjs/swagger";
 
 export class PostResponse {
   @ApiProperty() id!: string;
@@ -1194,18 +1248,23 @@ export class PostResponse {
 Apply guards, Swagger decorators, and response annotations. Do **not** add `@SkipEnvelope()` — business controllers benefit from the envelope:
 
 ```typescript
-import { Controller, Get, Post, Param, Body, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiCookieAuth, ApiBearerAuth } from '@nestjs/swagger';
-import { AuthGuard, CurrentUser, ApiDataResponse, ApiPaginatedResponse } from '../common';
-import { PostsService } from './posts.service';
-import { CreatePostDto } from './dto/create-post.dto';
-import { PostResponse } from './responses/post.response';
+import { Controller, Get, Post, Param, Body, UseGuards } from "@nestjs/common";
+import { ApiTags, ApiCookieAuth, ApiBearerAuth } from "@nestjs/swagger";
+import {
+  AuthGuard,
+  CurrentUser,
+  ApiDataResponse,
+  ApiPaginatedResponse,
+} from "../common";
+import { PostsService } from "./posts.service";
+import { CreatePostDto } from "./dto/create-post.dto";
+import { PostResponse } from "./responses/post.response";
 
-@ApiTags('Posts')
-@ApiCookieAuth('better-auth.session_token')
-@ApiBearerAuth('bearer-token')
+@ApiTags("Posts")
+@ApiCookieAuth("better-auth.session_token")
+@ApiBearerAuth("bearer-token")
 @UseGuards(AuthGuard)
-@Controller({ version: '1', path: 'api/posts' })
+@Controller({ version: "1", path: "api/posts" })
 export class PostsController {
   constructor(private readonly postsService: PostsService) {}
 
@@ -1215,11 +1274,11 @@ export class PostsController {
     return this.postsService.findAll(user.id);
   }
 
-  @Get(':id')
+  @Get(":id")
   @ApiDataResponse(PostResponse)
   findOne(
     @CurrentUser() user: { id: string },
-    @Param('id') id: string,
+    @Param("id") id: string,
   ): Promise<PostResponse> {
     return this.postsService.findOne(user.id, id);
   }
@@ -1231,9 +1290,9 @@ For paginated endpoints use `CursorPaginationDto` + `buildCursorPage()` and swap
 #### 7. Module
 
 ```typescript
-import { Module } from '@nestjs/common';
-import { PostsController } from './posts.controller';
-import { PostsService } from './posts.service';
+import { Module } from "@nestjs/common";
+import { PostsController } from "./posts.controller";
+import { PostsService } from "./posts.service";
 
 @Module({
   controllers: [PostsController],
@@ -1257,7 +1316,7 @@ If the feature is optional:
 2. Gate the import in `app.module.ts`:
    ```typescript
    const PostsModuleImport = features.posts
-     ? [require('./posts/posts.module').PostsModule]
+     ? [require("./posts/posts.module").PostsModule]
      : [];
    // then spread PostsModuleImport into imports: [...]
    ```
@@ -1276,16 +1335,16 @@ AI agents produce better output when they have the right context up front. The m
 
 Point the agent at these files before asking it to write anything:
 
-| Purpose | File |
-|---|---|
+| Purpose                                  | File                                                                                                                   |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
 | Existing business feature (full pattern) | [src/users/admin.controller.ts](src/users/admin.controller.ts), [src/users/user.service.ts](src/users/user.service.ts) |
-| DB schema + Zod schemas | [src/db/schema.ts](src/db/schema.ts), [src/db/zod-schemas.ts](src/db/zod-schemas.ts) |
-| Response envelope DTOs | [src/common/dto/api-response.dto.ts](src/common/dto/api-response.dto.ts) |
-| Swagger compound decorators | [src/common/decorators/api-data-response.decorator.ts](src/common/decorators/api-data-response.decorator.ts) |
-| SkipEnvelope decorator | [src/common/decorators/skip-envelope.decorator.ts](src/common/decorators/skip-envelope.decorator.ts) |
-| Pagination utilities | [src/common/dto/pagination.dto.ts](src/common/dto/pagination.dto.ts) |
-| Common barrel | [src/common/index.ts](src/common/index.ts) |
-| AppModule (feature-flag pattern) | [src/app.module.ts](src/app.module.ts) |
+| DB schema + Zod schemas                  | [src/db/schema.ts](src/db/schema.ts), [src/db/zod-schemas.ts](src/db/zod-schemas.ts)                                   |
+| Response envelope DTOs                   | [src/common/dto/api-response.dto.ts](src/common/dto/api-response.dto.ts)                                               |
+| Swagger compound decorators              | [src/common/decorators/api-data-response.decorator.ts](src/common/decorators/api-data-response.decorator.ts)           |
+| SkipEnvelope decorator                   | [src/common/decorators/skip-envelope.decorator.ts](src/common/decorators/skip-envelope.decorator.ts)                   |
+| Pagination utilities                     | [src/common/dto/pagination.dto.ts](src/common/dto/pagination.dto.ts)                                                   |
+| Common barrel                            | [src/common/index.ts](src/common/index.ts)                                                                             |
+| AppModule (feature-flag pattern)         | [src/app.module.ts](src/app.module.ts)                                                                                 |
 
 #### Sample prompt template
 
