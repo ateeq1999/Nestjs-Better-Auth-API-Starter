@@ -26,7 +26,13 @@
       "Bash(curl -s http://localhost:8025/api/v1/messages)",
       "Bash(curl -s \"http://localhost:8025/api/v1/messages?limit=20\")",
       "Bash(python -c \"import sys,json; msgs=json.load\\(sys.stdin\\).get\\('messages',[]\\); [print\\(m['ID'], m.get\\('From',{}\\).get\\('Address','?'\\), m.get\\('Subject','?'\\)\\) for m in msgs]\")",
-      "Bash(xargs grep *)"
+      "Bash(xargs grep *)",
+      "Bash(netstat -ano)",
+      "Bash(findstr :5555)",
+      "Bash(taskkill /PID 6808 /F)",
+      "Bash(cmd /c \"taskkill /PID 6808 /F\")",
+      "Bash(cmd /c \"taskkill /PID 6808 /F && echo done\")",
+      "Bash(powershell -Command \"Stop-Process -Id 6808 -Force; Write-Host 'killed'\")"
     ]
   }
 }

@@ -1,5 +1,6 @@
-import { Controller, Get, NotFoundException, Param } from '@nestjs/common';
+import { Controller, Get, Header, NotFoundException, Param, VERSION_NEUTRAL } from '@nestjs/common';
 import { ApiExcludeController } from '@nestjs/swagger';
+import { SkipEnvelope } from '../common/decorators/skip-envelope.decorator';
 import { renderEmail, type EmailTemplate } from './template.service';
 
 const TEMPLATES: EmailTemplate[] = [
@@ -46,8 +47,9 @@ const SAMPLE_DATA: Record<EmailTemplate, Record<string, unknown>> = {
  *
  * Only mounted when NODE_ENV !== 'production'.
  */
+@SkipEnvelope()
 @ApiExcludeController()
-@Controller('dev/email')
+@Controller({ version: VERSION_NEUTRAL, path: 'dev/email' })
 export class EmailPreviewController {
   @Get()
   listTemplates() {
@@ -58,6 +60,7 @@ export class EmailPreviewController {
   }
 
   @Get(':template')
+  @Header('Content-Type', 'text/html; charset=utf-8')
   previewTemplate(@Param('template') template: string) {
     if (!TEMPLATES.includes(template as EmailTemplate)) {
       throw new NotFoundException(
