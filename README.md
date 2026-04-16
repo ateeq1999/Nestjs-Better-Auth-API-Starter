@@ -462,6 +462,101 @@ This single command:
 
 ---
 
+## Testing the API
+
+### Why `token: null` after sign-up
+
+`requireEmailVerification: true` is set in `src/auth/auth.config.ts`. This is intentional — better-auth refuses to create a session until the email address is verified. Your request body is correct; the `null` token is not a bug.
+
+After sign-up, a verification email is sent automatically. In dev, all outbound email is trapped by **Mailpit** at `http://localhost:8025`. Open it, find the "Verify your email address" message, and click the link inside. Then sign in normally.
+
+### Fastest path for testing
+
+Use one of the pre-seeded accounts — they are already verified and ready to use:
+
+```http
+POST /v1/api/auth/sign-in
+Content-Type: application/json
+
+{ "email": "admin@example.com", "password": "Admin123!" }
+```
+
+No email verification step needed. Skip straight to choosing your auth method below.
+
+---
+
+### Bearer token (Insomnia, Swagger, curl, any HTTP client)
+
+Append `?token=true` to the sign-in URL. The response will include a real `token` value instead of `null`:
+
+```http
+POST /v1/api/auth/sign-in?token=true
+Content-Type: application/json
+
+{ "email": "admin@example.com", "password": "Admin123!" }
+```
+
+```json
+{ "token": "bat_abc123...", "user": { ... } }
+```
+
+Use the token in subsequent requests:
+
+```http
+GET /v1/api/users/me
+Authorization: Bearer bat_abc123...
+```
+
+#### Insomnia
+
+1. Execute sign-in with `?token=true`, copy the `token` from the response body
+2. On the next request → **Auth** tab → select **Bearer Token** → paste the value
+
+#### Swagger UI
+
+1. Execute `POST /api/auth/sign-in` — expand the `?token` query parameter dropdown (documented in Swagger) and set it to `true`
+2. Copy the `token` value from the response body
+3. Click **Authorize** (lock icon, top-right of the Swagger page)
+4. Under **bearer-token (http, Bearer)** paste the token → click **Authorize**
+5. All subsequent Swagger requests will include `Authorization: Bearer bat_abc123...` automatically
+
+---
+
+### Cookie-based auth (browser, Insomnia)
+
+Sign in **without** `?token=true`. Better-auth sets a `better-auth.session_token` cookie in the `Set-Cookie` response header.
+
+#### Insomnia
+
+Insomnia manages cookies automatically — no configuration needed. Sign in once and the cookie is sent on every subsequent request in the same collection. Confirm that **Send Cookies** is enabled under Preferences → Request/Response.
+
+#### Swagger UI
+
+Swagger UI sends cookies when it shares the same origin as the API (both on `localhost:5555`). Sign in via the Swagger form — the browser stores the session cookie — then subsequent Swagger requests from the same browser tab include it automatically. No manual step required.
+
+#### curl
+
+```bash
+# Sign in and save cookie to a jar
+curl -c cookies.txt -X POST http://localhost:5555/v1/api/auth/sign-in \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"admin@example.com","password":"Admin123!"}'
+
+# Use the saved cookie
+curl -b cookies.txt http://localhost:5555/v1/api/users/me
+```
+
+---
+
+### New user sign-up flow (end-to-end)
+
+1. `POST /v1/api/auth/sign-up` — `token` will be `null`
+2. Open **http://localhost:8025** (Mailpit) → click the verification link in the email
+3. `POST /v1/api/auth/sign-in?token=true` → copy the `token`
+4. Use `Authorization: Bearer <token>` on all subsequent requests
+
+---
+
 ## Feature Flags
 
 Optional features are controlled by a two-layer config:

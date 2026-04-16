@@ -16,6 +16,7 @@ import {
   ApiResponse,
   ApiCookieAuth,
   ApiBearerAuth,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import type { FastifyReply, FastifyRequest } from 'fastify';
@@ -53,7 +54,14 @@ export class IdentityController {
    */
   @Post('sign-up')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Register a new user with email and password' })
+  @ApiOperation({
+    summary: 'Register a new user with email and password',
+    description:
+      '`token` in the response is **always null** after sign-up because `requireEmailVerification` is enabled. ' +
+      'A verification email is sent automatically — check Mailpit at http://localhost:8025 in dev. ' +
+      'After clicking the link, sign in via `POST /api/auth/sign-in` to get a session cookie, ' +
+      'or add `?token=true` to get a Bearer token.',
+  })
   @ApiBody({ type: SignUpDto })
   @ApiResponse({ status: 200, type: AuthResponse })
   @ApiResponse({ status: 422, description: 'Email already in use' })
@@ -79,6 +87,12 @@ export class IdentityController {
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth('bearer-token')
   @ApiOperation({ summary: 'Sign in with email and password (cookie or bearer token)' })
+  @ApiQuery({
+    name: 'token',
+    required: false,
+    enum: ['true'],
+    description: 'Pass ?token=true to receive a Bearer token in the response instead of (or in addition to) a session cookie. Use this for mobile clients and API testing tools.',
+  })
   @ApiBody({ type: SignInDto })
   @ApiResponse({ status: 200, type: AuthResponse })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
