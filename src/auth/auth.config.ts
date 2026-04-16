@@ -78,21 +78,24 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: true,
-    sendVerificationEmail: async (user, url) => {
-      const { html, text } = renderEmail({
-        template: 'email-verification',
-        subject: 'Verify your email address',
-        data: { name: user.name ?? user.email, url },
-      });
-      await sendEmail({ to: user.email, subject: 'Verify your email address', html, text });
-    },
-    sendResetPasswordEmail: async (user, url) => {
+    sendResetPassword: async ({ user, url }: { user: { name?: string | null; email: string }; url: string }) => {
       const { html, text } = renderEmail({
         template: 'password-reset',
         subject: 'Reset your password',
         data: { name: user.name ?? user.email, email: user.email, url },
       });
       await sendEmail({ to: user.email, subject: 'Reset your password', html, text });
+    },
+  },
+
+  emailVerification: {
+    sendVerificationEmail: async ({ user, url }: { user: { name?: string | null; email: string }; url: string }) => {
+      const { html, text } = renderEmail({
+        template: 'email-verification',
+        subject: 'Verify your email address',
+        data: { name: user.name ?? user.email, url },
+      });
+      await sendEmail({ to: user.email, subject: 'Verify your email address', html, text });
     },
   },
 

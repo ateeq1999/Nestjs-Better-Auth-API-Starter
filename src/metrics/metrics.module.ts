@@ -4,6 +4,7 @@ import {
   makeCounterProvider,
   makeHistogramProvider,
 } from '@willsoto/nestjs-prometheus';
+import { CustomMetricsController } from './metrics.controller';
 
 /**
  * Exposes Prometheus metrics at GET /metrics (OB1).
@@ -23,6 +24,7 @@ import {
     PrometheusModule.register({
       path: '/metrics',
       defaultMetrics: { enabled: true }, // process + Node.js runtime metrics
+      controller: CustomMetricsController,
     }),
   ],
   providers: [

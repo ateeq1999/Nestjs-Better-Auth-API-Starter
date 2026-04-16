@@ -22,7 +22,11 @@
       "Bash(docker compose *)",
       "Bash(DATABASE_URL=\"postgresql://postgres:postgres@localhost:5432/nest_better_auth\" npx drizzle-kit migrate)",
       "Bash(DATABASE_URL=\"postgresql://postgres:postgres@localhost:5432/nest_better_auth\" npx drizzle-kit migrate --verbose)",
-      "Bash(SKIP_INFRA=true bash scripts/dev.sh)"
+      "Bash(SKIP_INFRA=true bash scripts/dev.sh)",
+      "Bash(curl -s http://localhost:8025/api/v1/messages)",
+      "Bash(curl -s \"http://localhost:8025/api/v1/messages?limit=20\")",
+      "Bash(python -c \"import sys,json; msgs=json.load\\(sys.stdin\\).get\\('messages',[]\\); [print\\(m['ID'], m.get\\('From',{}\\).get\\('Address','?'\\), m.get\\('Subject','?'\\)\\) for m in msgs]\")",
+      "Bash(xargs grep *)"
     ]
   }
 }
