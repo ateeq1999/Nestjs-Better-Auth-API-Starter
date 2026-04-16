@@ -129,7 +129,8 @@ Every optional feature can be turned on/off without rebuilding. See [Feature Fla
 
 ### Developer Experience
 - **`pnpm dev`** — one command: docker compose up → wait for DB → migrate → seed → watch server
-- **Consistent errors** — global exception filter returns `{ statusCode, message, error, timestamp }`
+- **Response envelope** — every API response is wrapped in `{ success, data, meta }` by default; opt out with `@SkipEnvelope()`
+- **Consistent errors** — global exception filter returns `{ success: false, error: { code, message, details? }, meta: { timestamp, requestId } }`
 - **Structured logging** — Fastify Pino wired into NestJS Logger; request IDs in every log line
 - **Request logging** — `[METHOD] /path → status in Xms [req-id]` for every route
 - **Health check** — `GET /health` with live PostgreSQL connectivity probe
@@ -172,23 +173,27 @@ src/
 │   │   ├── current-user.decorator.ts
 │   │   ├── current-organization.decorator.ts  # @CurrentOrganization(), @CurrentOrgMember()
 │   │   ├── roles.decorator.ts                  # @Roles('admin', 'moderator')
-│   │   └── org-roles.decorator.ts              # @OrgRoles('owner', 'admin')
+│   │   ├── org-roles.decorator.ts              # @OrgRoles('owner', 'admin')
+│   │   ├── skip-envelope.decorator.ts          # @SkipEnvelope() — bypass response wrapping
+│   │   └── api-data-response.decorator.ts      # @ApiDataResponse(Dto), @ApiPaginatedResponse(Dto)
 │   ├── dto/
-│   │   └── pagination.dto.ts           # CursorPaginationDto, CursorPage<T>, buildCursorPage()
+│   │   ├── pagination.dto.ts           # CursorPaginationDto, CursorPage<T>, buildCursorPage()
+│   │   └── api-response.dto.ts         # ApiSuccessResponse<T>, ApiFailureResponse, apiResponseSchema<T>()
 │   ├── filters/
-│   │   └── http-exception.filter.ts    # { statusCode, message, error, timestamp }
+│   │   └── http-exception.filter.ts    # { success, error: { code, message, details? }, meta }
 │   ├── guards/
 │   │   ├── auth.guard.ts               # cookie + Bearer; Redis session cache
 │   │   ├── roles.guard.ts              # checks req.user.role against @Roles()
 │   │   ├── organization.guard.ts       # resolves X-Organization-Id → req.organization
 │   │   └── org-roles.guard.ts          # checks req.organizationMember.role against @OrgRoles()
 │   ├── interceptors/
-│   │   └── logging.interceptor.ts
+│   │   ├── logging.interceptor.ts
+│   │   └── response-envelope.interceptor.ts    # wraps all responses; flattens CursorPage<T> into meta
 │   ├── logger/
 │   │   └── pino-logger.service.ts      # Fastify Pino → NestJS LoggerService bridge
 │   ├── utils/
 │   │   └── callback-url.util.ts
-│   └── index.ts                        # barrel export for all guards, decorators, DTOs
+│   └── index.ts                        # barrel export for all guards, decorators, DTOs, interceptors
 ├── config/
 │   ├── app-config.service.ts           # typed ConfigService wrapper
 │   ├── config.module.ts
@@ -300,6 +305,94 @@ Request → ValidationPipe → DTO → callAuthHandler() → better-auth → Res
 - better-auth owns the actual auth logic (hashing, session creation, email hooks)
 - `Set-Cookie` and Bearer token headers are forwarded automatically
 - Each endpoint is documented in Swagger with typed request/response schemas
+
+### API Response Envelope
+
+Every controller that returns data directly (not proxying through better-auth) is automatically wrapped by `ResponseEnvelopeInterceptor`:
+
+**Success — single resource**
+```json
+{
+  "success": true,
+  "data": { "id": "...", "email": "..." },
+  "meta": { "timestamp": "2026-04-16T10:00:00.000Z", "requestId": "abc-123" }
+}
+```
+
+**Success — paginated list**
+```json
+{
+  "success": true,
+  "data": [ { "id": "..." }, { "id": "..." } ],
+  "meta": {
+    "timestamp": "2026-04-16T10:00:00.000Z",
+    "requestId": "abc-123",
+    "pagination": { "limit": 20, "hasNextPage": true, "nextCursor": "cursor-xyz" }
+  }
+}
+```
+
+**Error**
+```json
+{
+  "success": false,
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "Post abc not found",
+    "details": ["title must not be empty"]
+  },
+  "meta": { "timestamp": "2026-04-16T10:00:00.000Z", "requestId": "abc-123" }
+}
+```
+
+#### Opting out
+
+Auth proxy controllers (those that call `callAuthHandler()` and forward the raw better-auth response) must opt out of wrapping — better-auth already produces its own response shape:
+
+```typescript
+@SkipEnvelope()          // ← add this to any controller that bypasses the envelope
+@Controller({ version: '1', path: 'api/auth/...' })
+export class MyAuthProxyController { ... }
+```
+
+All controllers under `src/auth/controllers/` already carry `@SkipEnvelope()` except `user.controller.ts`, which returns typed data directly and benefits from the envelope.
+
+#### Swagger annotations
+
+Use the compound decorators so Swagger documents the wrapped shape automatically:
+
+```typescript
+import { ApiDataResponse, ApiPaginatedResponse } from '../common';
+
+// Single resource
+@Get(':id')
+@ApiDataResponse(PostResponse)
+findOne(@Param('id') id: string): PostResponse { ... }
+
+// Paginated list
+@Get()
+@ApiPaginatedResponse(PostResponse)
+findAll(): Promise<CursorPage<PostResponse>> { ... }
+```
+
+#### Client-side type-safe parsing
+
+`apiResponseSchema<T>(dataSchema)` produces a discriminated-union Zod schema:
+
+```typescript
+import { apiResponseSchema } from '@common/dto/api-response.dto';
+import { z } from 'zod';
+
+const postSchema = z.object({ id: z.string(), title: z.string() });
+const responseSchema = apiResponseSchema(postSchema);
+
+const result = responseSchema.parse(await res.json());
+if (result.success) {
+  console.log(result.data.title);  // fully typed
+} else {
+  console.error(result.error.code, result.error.message);
+}
+```
 
 ---
 
@@ -881,6 +974,265 @@ All default to the values in `src/config/features.config.ts`. Set to `false` or 
 | `FEATURE_METRICS` | `true` | Prometheus `/metrics` |
 | `FEATURE_TRACING` | `false` | OpenTelemetry (opt-in) |
 | `FEATURE_LOG_SHIPPING` | `false` | Pino-Loki (opt-in) |
+
+---
+
+## Adding Business Features
+
+This section covers how to add a new feature module — whether you write it by hand or use an AI coding agent. The same patterns apply in both cases; the difference is only in how you communicate the constraints.
+
+The examples below use a `posts` feature as a concrete reference.
+
+---
+
+### By Hand
+
+#### 1. Schema
+
+Add a new table to [src/db/schema.ts](src/db/schema.ts):
+
+```typescript
+export const post = pgTable('posts', {
+  id:        uuid('id').primaryKey().defaultRandom(),
+  userId:    text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+  title:     text('title').notNull(),
+  body:      text('body').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+```
+
+Generate and apply the migration:
+
+```bash
+pnpm db:generate   # writes a new file under drizzle/migrations/
+pnpm db:migrate    # applies it
+# or during active dev:
+pnpm db:push       # idempotent, skips migration files
+```
+
+#### 2. Zod schemas
+
+Add to [src/db/zod-schemas.ts](src/db/zod-schemas.ts) using `drizzle-zod`:
+
+```typescript
+import { createSelectSchema, createInsertSchema } from 'drizzle-zod';
+import { post } from './schema';
+
+export const selectPostSchema = createSelectSchema(post);
+export const insertPostSchema = createInsertSchema(post);
+export const updatePostSchema = insertPostSchema.partial().omit({ id: true, userId: true, createdAt: true });
+
+export type SelectPost = typeof selectPostSchema._type;
+export type InsertPost = typeof insertPostSchema._type;
+export type UpdatePost = typeof updatePostSchema._type;
+```
+
+Column changes in `schema.ts` automatically flow through to the Zod schemas — no manual type duplication.
+
+#### 3. Module scaffold
+
+```
+src/posts/
+├── dto/
+│   ├── create-post.dto.ts     # class-validator DTO for POST body
+│   └── update-post.dto.ts
+├── responses/
+│   └── post.response.ts       # response shape (what the client sees)
+├── posts.controller.ts
+├── posts.service.ts
+└── posts.module.ts
+```
+
+#### 4. Service
+
+Inject `DrizzleService`. Use Drizzle's query builder — no raw SQL unless genuinely necessary:
+
+```typescript
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { eq, and, desc } from 'drizzle-orm';
+import { DrizzleService } from '../db/drizzle.service';
+import { post } from '../db/schema';
+import type { SelectPost } from '../db/zod-schemas';
+
+@Injectable()
+export class PostsService {
+  constructor(private readonly drizzle: DrizzleService) {}
+
+  async findAll(userId: string): Promise<SelectPost[]> {
+    return this.drizzle.db
+      .select()
+      .from(post)
+      .where(eq(post.userId, userId))
+      .orderBy(desc(post.createdAt));
+  }
+
+  async findOne(userId: string, id: string): Promise<SelectPost> {
+    const [row] = await this.drizzle.db
+      .select()
+      .from(post)
+      .where(and(eq(post.id, id), eq(post.userId, userId)))
+      .limit(1);
+    if (!row) throw new NotFoundException(`Post ${id} not found`);
+    return row;
+  }
+}
+```
+
+#### 5. Response class
+
+Define exactly what the client receives. Use `@Exclude()` on fields you never want to expose:
+
+```typescript
+import { ApiProperty } from '@nestjs/swagger';
+
+export class PostResponse {
+  @ApiProperty() id!: string;
+  @ApiProperty() title!: string;
+  @ApiProperty() body!: string;
+  @ApiProperty() createdAt!: Date;
+}
+```
+
+#### 6. Controller
+
+Apply guards, Swagger decorators, and response annotations. Do **not** add `@SkipEnvelope()` — business controllers benefit from the envelope:
+
+```typescript
+import { Controller, Get, Post, Param, Body, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiCookieAuth, ApiBearerAuth } from '@nestjs/swagger';
+import { AuthGuard, CurrentUser, ApiDataResponse, ApiPaginatedResponse } from '../common';
+import { PostsService } from './posts.service';
+import { CreatePostDto } from './dto/create-post.dto';
+import { PostResponse } from './responses/post.response';
+
+@ApiTags('Posts')
+@ApiCookieAuth('better-auth.session_token')
+@ApiBearerAuth('bearer-token')
+@UseGuards(AuthGuard)
+@Controller({ version: '1', path: 'api/posts' })
+export class PostsController {
+  constructor(private readonly postsService: PostsService) {}
+
+  @Get()
+  @ApiDataResponse(PostResponse, { isArray: true })
+  findAll(@CurrentUser() user: { id: string }): Promise<PostResponse[]> {
+    return this.postsService.findAll(user.id);
+  }
+
+  @Get(':id')
+  @ApiDataResponse(PostResponse)
+  findOne(
+    @CurrentUser() user: { id: string },
+    @Param('id') id: string,
+  ): Promise<PostResponse> {
+    return this.postsService.findOne(user.id, id);
+  }
+}
+```
+
+For paginated endpoints use `CursorPaginationDto` + `buildCursorPage()` and swap `@ApiDataResponse` for `@ApiPaginatedResponse`.
+
+#### 7. Module
+
+```typescript
+import { Module } from '@nestjs/common';
+import { PostsController } from './posts.controller';
+import { PostsService } from './posts.service';
+
+@Module({
+  controllers: [PostsController],
+  providers: [PostsService],
+})
+export class PostsModule {}
+```
+
+#### 8. Register in AppModule
+
+Open [src/app.module.ts](src/app.module.ts) and add `PostsModule` to the `imports` array. Place it after `DrizzleModule` (which must be first).
+
+#### 9. Feature-flag it (optional)
+
+If the feature is optional:
+
+1. Add a key to `featureDefaults` in [src/config/features.config.ts](src/config/features.config.ts):
+   ```typescript
+   posts: true,
+   ```
+2. Gate the import in `app.module.ts`:
+   ```typescript
+   const PostsModuleImport = features.posts
+     ? [require('./posts/posts.module').PostsModule]
+     : [];
+   // then spread PostsModuleImport into imports: [...]
+   ```
+3. Users can now disable the feature without code changes:
+   ```env
+   FEATURE_POSTS=false
+   ```
+
+---
+
+### With an AI Coding Agent / Vibe Coding
+
+AI agents produce better output when they have the right context up front. The main failure modes are: wrong response shape, raw `db` imports instead of `DrizzleService`, missing Swagger annotations, and forgetting `@SkipEnvelope()` on auth proxies. Pre-empt all of these in your prompt.
+
+#### Files to give the agent as reference
+
+Point the agent at these files before asking it to write anything:
+
+| Purpose | File |
+|---|---|
+| Existing business feature (full pattern) | [src/users/admin.controller.ts](src/users/admin.controller.ts), [src/users/user.service.ts](src/users/user.service.ts) |
+| DB schema + Zod schemas | [src/db/schema.ts](src/db/schema.ts), [src/db/zod-schemas.ts](src/db/zod-schemas.ts) |
+| Response envelope DTOs | [src/common/dto/api-response.dto.ts](src/common/dto/api-response.dto.ts) |
+| Swagger compound decorators | [src/common/decorators/api-data-response.decorator.ts](src/common/decorators/api-data-response.decorator.ts) |
+| SkipEnvelope decorator | [src/common/decorators/skip-envelope.decorator.ts](src/common/decorators/skip-envelope.decorator.ts) |
+| Pagination utilities | [src/common/dto/pagination.dto.ts](src/common/dto/pagination.dto.ts) |
+| Common barrel | [src/common/index.ts](src/common/index.ts) |
+| AppModule (feature-flag pattern) | [src/app.module.ts](src/app.module.ts) |
+
+#### Sample prompt template
+
+```
+Context: NestJS 11 + Fastify + Drizzle ORM + better-auth starter.
+
+I need a `posts` feature module. Read these files first to understand the patterns:
+- src/users/admin.controller.ts   (controller pattern)
+- src/users/user.service.ts       (DrizzleService injection)
+- src/db/schema.ts                (table definitions)
+- src/db/zod-schemas.ts           (Zod schema generation)
+- src/common/dto/api-response.dto.ts
+- src/common/decorators/api-data-response.decorator.ts
+- src/common/index.ts
+
+Requirements:
+- Table: posts (id uuid pk, userId text→user.id, title text, body text, createdAt, updatedAt)
+- CRUD: create, list (cursor-paginated), get-by-id, update, delete
+- Auth: all routes require AuthGuard; delete requires @Roles('admin') as well
+- Response: use PostResponse class (id, title, body, createdAt); wrap via existing envelope — do NOT add @SkipEnvelope()
+- Swagger: @ApiDataResponse(PostResponse) on single-resource routes, @ApiPaginatedResponse(PostResponse) on list
+- Service: inject DrizzleService — never import `db` directly from connection.ts
+- Do NOT add error handling for cases that can't happen (Drizzle throws, NestJS handles it)
+- Do NOT create helpers that are only used once
+- Register PostsModule in app.module.ts after DrizzleModule
+
+Produce: schema addition, zod-schema addition, src/posts/ module (service, controller, module, dto/, responses/).
+```
+
+#### Checklist after generation
+
+Before accepting AI-generated code, verify:
+
+- [ ] Service injects `DrizzleService`, not raw `db` from `connection.ts`
+- [ ] Controller does **not** have `@SkipEnvelope()` (only auth-proxy controllers need it)
+- [ ] Response class is used as return type, not inline object
+- [ ] Every route has `@ApiDataResponse` or `@ApiPaginatedResponse`
+- [ ] Every route has `@ApiCookieAuth('better-auth.session_token')` and `@ApiBearerAuth('bearer-token')`
+- [ ] `PostsModule` added to `app.module.ts` after `DrizzleModule`
+- [ ] No extra error handling for internal calls (e.g. `try/catch` around Drizzle queries)
+- [ ] `pnpm build` passes with no TypeScript errors
+- [ ] `pnpm test` still passes (14/14)
 
 ---
 
