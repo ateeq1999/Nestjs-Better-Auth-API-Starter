@@ -32,7 +32,10 @@
       "Bash(taskkill /PID 6808 /F)",
       "Bash(cmd /c \"taskkill /PID 6808 /F\")",
       "Bash(cmd /c \"taskkill /PID 6808 /F && echo done\")",
-      "Bash(powershell -Command \"Stop-Process -Id 6808 -Force; Write-Host 'killed'\")"
+      "Bash(powershell -Command \"Stop-Process -Id 6808 -Force; Write-Host 'killed'\")",
+      "Bash(powershell -Command \"\\(Get-NetTCPConnection -LocalPort 5555 -ErrorAction SilentlyContinue\\).State\")",
+      "Bash(curl -s -X POST http://localhost:5555/v1/api/auth/sign-up -H \"Content-Type: application/json\" -d \"{\\\\\"name\\\\\":\\\\\"Test User\\\\\",\\\\\"email\\\\\":\\\\\"testdebug@example.com\\\\\",\\\\\"password\\\\\":\\\\\"Test1234!\\\\\"}\")",
+      "Bash(curl -s \"http://localhost:8025/api/v1/messages?limit=10\")"
     ]
   }
 }
