@@ -7,7 +7,6 @@ import { UserController } from './controllers/user.controller';
 import { MagicLinkController } from './controllers/magic-link.controller';
 import { LockoutService } from './lockout.service';
 import { AuditModule } from '../audit/audit.module';
-import { DeviceTokenController } from '../users/device-token.controller';
 
 @Module({
   imports: [AuditModule],
@@ -17,7 +16,6 @@ import { DeviceTokenController } from '../users/device-token.controller';
     VerificationController,  // POST /v1/api/auth/verify-email, send-verification-email
     OAuthController,         // GET  /api/auth/sign-in/social, callback/:provider (VERSION_NEUTRAL)
     UserController,          // GET  /v1/api/users/me
-    DeviceTokenController,   // POST /v1/api/users/me/device-tokens | DELETE /v1/api/users/me/device-tokens/:id
     MagicLinkController,     // POST /v1/api/auth/magic-link/send-magic-link | GET /v1/api/auth/magic-link/verify-magic-link
   ],
   providers: [LockoutService],
