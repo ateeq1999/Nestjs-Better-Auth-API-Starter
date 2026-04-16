@@ -16,7 +16,8 @@
       "Bash(pnpm build *)",
       "Bash(node -e \"const ba = require\\('better-auth/plugins'\\); console.log\\(Object.keys\\(ba\\)\\)\")",
       "Bash(node -e \"const ba = require\\('better-auth/plugins'\\); const ml = ba.magicLink; console.log\\(typeof ml\\)\")",
-      "Bash(node -e \"const ba = require\\('better-auth/plugins'\\); const org = ba.organization; console.log\\(typeof org\\)\")"
+      "Bash(node -e \"const ba = require\\('better-auth/plugins'\\); const org = ba.organization; console.log\\(typeof org\\)\")",
+      "Bash(pnpm test *)"
     ]
   }
 }

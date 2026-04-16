@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { and, asc, eq, gt, isNull, sql } from 'drizzle-orm';
-import { db } from '../db/index';
+import { DrizzleService } from '../db/drizzle.service';
 import { user, type UserRole } from '../db/schema';
 import { buildCursorPage, type CursorPage, type CursorPaginationDto } from '../common/dto/pagination.dto';
 
@@ -18,16 +18,14 @@ export type UserProfile = {
   updatedAt: Date;
 };
 
-/**
- * Owns all user-profile read/write operations that are not part of
- * the auth flow (which belongs to better-auth).
- */
 @Injectable()
 export class UserService {
+  constructor(private readonly drizzle: DrizzleService) {}
+
   // ─── Public (user-facing) ──────────────────────────────────────────────────
 
   async findById(id: string): Promise<UserProfile> {
-    const found = await db.query.user.findFirst({
+    const found = await this.drizzle.db.query.user.findFirst({
       where: and(eq(user.id, id), isNull(user.deletedAt)),
     });
     if (!found) throw new NotFoundException(`User ${id} not found`);
@@ -38,7 +36,7 @@ export class UserService {
     id: string,
     patch: { name?: string; image?: string | null },
   ): Promise<UserProfile> {
-    const [updated] = await db
+    const [updated] = await this.drizzle.db
       .update(user)
       .set({ ...patch, updatedAt: new Date() })
       .where(and(eq(user.id, id), isNull(user.deletedAt)))
@@ -53,7 +51,7 @@ export class UserService {
   async findAll(query: CursorPaginationDto): Promise<CursorPage<UserProfile>> {
     const limit = query.limit ?? 20;
 
-    const rows = await db.query.user.findMany({
+    const rows = await this.drizzle.db.query.user.findMany({
       where: and(
         isNull(user.deletedAt),
         query.cursor ? gt(user.id, query.cursor) : undefined,
@@ -66,13 +64,13 @@ export class UserService {
   }
 
   async findByIdAdmin(id: string): Promise<UserProfile> {
-    const found = await db.query.user.findFirst({ where: eq(user.id, id) });
+    const found = await this.drizzle.db.query.user.findFirst({ where: eq(user.id, id) });
     if (!found) throw new NotFoundException(`User ${id} not found`);
     return this.toProfile(found);
   }
 
   async updateRole(id: string, role: UserRole): Promise<UserProfile> {
-    const [updated] = await db
+    const [updated] = await this.drizzle.db
       .update(user)
       .set({ role, updatedAt: new Date() })
       .where(eq(user.id, id))
@@ -82,7 +80,7 @@ export class UserService {
   }
 
   async ban(id: string, reason: string): Promise<UserProfile> {
-    const [updated] = await db
+    const [updated] = await this.drizzle.db
       .update(user)
       .set({ bannedAt: new Date(), banReason: reason, updatedAt: new Date() })
       .where(eq(user.id, id))
@@ -92,7 +90,7 @@ export class UserService {
   }
 
   async unban(id: string): Promise<UserProfile> {
-    const [updated] = await db
+    const [updated] = await this.drizzle.db
       .update(user)
       .set({ bannedAt: null, banReason: null, updatedAt: new Date() })
       .where(eq(user.id, id))
@@ -102,7 +100,7 @@ export class UserService {
   }
 
   async forceVerifyEmail(id: string): Promise<UserProfile> {
-    const [updated] = await db
+    const [updated] = await this.drizzle.db
       .update(user)
       .set({ emailVerified: true, updatedAt: new Date() })
       .where(eq(user.id, id))
@@ -112,7 +110,7 @@ export class UserService {
   }
 
   async softDelete(id: string): Promise<void> {
-    const [updated] = await db
+    const [updated] = await this.drizzle.db
       .update(user)
       .set({ deletedAt: new Date(), updatedAt: new Date() })
       .where(and(eq(user.id, id), isNull(user.deletedAt)))
@@ -121,7 +119,7 @@ export class UserService {
   }
 
   async getStats(): Promise<{ total: number; banned: number; deleted: number; admins: number }> {
-    const [row] = await db
+    const [row] = await this.drizzle.db
       .select({
         total:   sql<number>`count(*)::int`,
         banned:  sql<number>`count(*) filter (where ${user.bannedAt} is not null)::int`,

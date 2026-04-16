@@ -1,77 +1,79 @@
 import { betterAuth } from 'better-auth';
-import { bearer, magicLink, organization, twoFactor } from 'better-auth/plugins';
+import { bearer } from 'better-auth/plugins';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { db } from '../db';
+import { db } from '../db/connection'; // raw connection — auth.config lives outside DI
 import * as schema from '../db/schema';
 import { sendEmail } from './email.service';
 import { renderEmail } from '../email/template.service';
+import { features } from '../config/features';
+
+// ── Conditional plugin imports ────────────────────────────────────────────────
+// Loaded lazily so disabled plugins add zero runtime cost.
+const twoFactorPlugin  = features.twoFactor    ? require('better-auth/plugins').twoFactor  : null;
+const magicLinkPlugin  = features.magicLink    ? require('better-auth/plugins').magicLink  : null;
+const organizationPlugin = features.organization ? require('better-auth/plugins').organization : null;
+
+// ── Auth plugins array (always includes bearer for mobile support) ────────────
+const plugins = [
+  bearer(),
+
+  ...(twoFactorPlugin
+    ? [twoFactorPlugin({ issuer: process.env.APP_NAME ?? 'NestJS Better-Auth' })]
+    : []),
+
+  ...(magicLinkPlugin
+    ? [
+        magicLinkPlugin({
+          sendMagicLink: async (data: { email: string; url: string }) => {
+            const { html, text } = renderEmail({
+              template: 'magic-link',
+              subject: 'Your sign-in link',
+              data: { url: data.url },
+            });
+            await sendEmail({ to: data.email, subject: 'Your sign-in link', html, text });
+          },
+        }),
+      ]
+    : []),
+
+  ...(organizationPlugin ? [organizationPlugin()] : []),
+];
+
+// ── Schema tables for drizzle adapter ────────────────────────────────────────
+const adapterSchema: Record<string, unknown> = {
+  user: schema.user,
+  session: schema.session,
+  account: schema.account,
+  verification: schema.verification,
+};
+if (features.twoFactor)    adapterSchema['twoFactor']    = schema.twoFactor;
+if (features.organization) {
+  adapterSchema['organization'] = schema.organization;
+  adapterSchema['member']       = schema.member;
+  adapterSchema['invitation']   = schema.invitation;
+}
+
+// ── Social providers (only wired when env vars are present AND feature is on) ─
+const socialProviders: Record<string, unknown> = {};
+if (features.socialAuth) {
+  if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+    socialProviders['google'] = {
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    };
+  }
+  if (process.env.APPLE_CLIENT_ID && process.env.APPLE_CLIENT_SECRET) {
+    socialProviders['apple'] = {
+      clientId: process.env.APPLE_CLIENT_ID,
+      clientSecret: process.env.APPLE_CLIENT_SECRET,
+    };
+  }
+}
 
 export const auth = betterAuth({
-  database: drizzleAdapter(db, {
-    provider: 'pg',
-    schema: {
-      user: schema.user,
-      session: schema.session,
-      account: schema.account,
-      verification: schema.verification,
-      twoFactor: schema.twoFactor,
-      organization: schema.organization,
-      member: schema.member,
-      invitation: schema.invitation,
-    },
-  }),
+  database: drizzleAdapter(db, { provider: 'pg', schema: adapterSchema }),
 
-  plugins: [
-    /**
-     * Bearer token plugin — enables Authorization: Bearer <token> flow.
-     * Mobile clients (Flutter, React Native) that cannot reliably persist
-     * cookies use this instead of the default cookie-based session.
-     *
-     * Adds endpoints:
-     *   POST /api/auth/token          — exchange credentials for a bearer token
-     *   POST /api/auth/token/refresh  — refresh an expiring access token
-     *
-     * Clients can also pass the token directly in sign-in/sign-up responses
-     * by adding `?token=true` to the request URL.
-     */
-    bearer(),
-
-    /**
-     * Two-factor authentication (TOTP) plugin.
-     * Adds endpoints:
-     *   POST /api/auth/two-factor/enable       — enable 2FA, returns QR code URI
-     *   POST /api/auth/two-factor/disable      — disable 2FA
-     *   POST /api/auth/two-factor/verify-totp  — verify a TOTP code on sign-in
-     *   GET  /api/auth/two-factor/get-uri      — get the TOTP provisioning URI
-     */
-    twoFactor({
-      issuer: 'NestJS Better-Auth',
-    }),
-
-    /**
-     * Magic link — passwordless email sign-in (P10).
-     * Adds endpoints:
-     *   POST /api/auth/magic-link/send-magic-link   — send login link to email
-     *   GET  /api/auth/magic-link/verify-magic-link — verify token from email
-     */
-    magicLink({
-      sendMagicLink: async (data) => {
-        const { html, text } = renderEmail({
-          template: 'magic-link',
-          subject: 'Your sign-in link',
-          data: { url: data.url },
-        });
-        await sendEmail({ to: data.email, subject: 'Your sign-in link', html, text });
-      },
-    }),
-
-    /**
-     * Organization / multi-tenancy (P12).
-     * Adds endpoints for creating and managing workspaces, inviting members,
-     * and managing member roles.
-     */
-    organization(),
-  ],
+  plugins,
 
   emailAndPassword: {
     enabled: true,
@@ -94,52 +96,16 @@ export const auth = betterAuth({
     },
   },
 
-  /**
-   * Google OAuth — only active when both env vars are present.
-   * Callback URL to register in Google Cloud Console:
-   *   {BETTER_AUTH_URL}/api/auth/callback/google
-   *
-   * Apple Sign-In — only active when APPLE_CLIENT_ID + APPLE_CLIENT_SECRET are set.
-   * Callback URL to register in Apple Developer Console:
-   *   {BETTER_AUTH_URL}/api/auth/callback/apple
-   */
-  socialProviders: {
-    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
-      ? {
-          google: {
-            clientId: process.env.GOOGLE_CLIENT_ID,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-          },
-        }
-      : {}),
-    ...(process.env.APPLE_CLIENT_ID && process.env.APPLE_CLIENT_SECRET
-      ? {
-          apple: {
-            clientId: process.env.APPLE_CLIENT_ID,
-            clientSecret: process.env.APPLE_CLIENT_SECRET,
-          },
-        }
-      : {}),
-  },
+  socialProviders,
 
-  /**
-   * CSRF protection — enabled for cookie-based flows.
-   * better-auth generates and validates a CSRF token tied to the session.
-   * Bearer token requests are exempt (they are stateless by design).
-   */
   advanced: {
-    crossSubDomainCookies: {
-      enabled: false,
-    },
+    crossSubDomainCookies: { enabled: false },
   },
 
   session: {
-    expiresIn: 60 * 60 * 24 * 7,   // 7 days
-    updateAge: 60 * 60 * 24,         // refresh if older than 1 day
-    cookieCache: {
-      enabled: true,
-      maxAge: 5 * 60,                // 5 minutes
-    },
+    expiresIn: 60 * 60 * 24 * 7,  // 7 days
+    updateAge: 60 * 60 * 24,        // refresh if older than 1 day
+    cookieCache: { enabled: true, maxAge: 5 * 60 },
   },
 
   trustedOrigins: (process.env.CORS_ORIGINS ?? 'http://localhost:5173,http://localhost:3000')

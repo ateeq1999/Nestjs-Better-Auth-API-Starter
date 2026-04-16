@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { and, asc, desc, eq, gt } from 'drizzle-orm';
 import { createId } from '@paralleldrive/cuid2';
 import type { FastifyRequest } from 'fastify';
-import { db } from '../db/index';
+import { DrizzleService } from '../db/drizzle.service';
 import { auditLog } from '../db/schema';
 import { buildCursorPage, type CursorPage, type CursorPaginationDto } from '../common/dto/pagination.dto';
 
@@ -31,19 +31,12 @@ export interface AuditEntry {
   metadata?: Record<string, unknown>;
 }
 
-/**
- * Records auth events for security monitoring and compliance.
- *
- * Usage in controllers:
- *   await this.audit.log({ userId, action: 'sign_in', ipAddress: req.ip });
- *
- * Usage with a Fastify request:
- *   AuditService.fromRequest(req, { userId, action: 'sign_in' });
- */
 @Injectable()
 export class AuditService {
+  constructor(private readonly drizzle: DrizzleService) {}
+
   async log(entry: AuditEntry): Promise<void> {
-    await db.insert(auditLog).values({
+    await this.drizzle.db.insert(auditLog).values({
       id: createId(),
       userId: entry.userId ?? null,
       action: entry.action,
@@ -68,7 +61,7 @@ export class AuditService {
   ): Promise<CursorPage<typeof auditLog.$inferSelect>> {
     const limit = query.limit ?? 20;
 
-    const rows = await db
+    const rows = await this.drizzle.db
       .select()
       .from(auditLog)
       .where(

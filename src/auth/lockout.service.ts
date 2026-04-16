@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { and, eq, gte, count } from 'drizzle-orm';
 import { createId } from '@paralleldrive/cuid2';
-import { db } from '../db/index';
+import { DrizzleService } from '../db/drizzle.service';
 import { loginAttempt, accountLockout, user } from '../db/schema';
 import { sendEmail } from './email.service';
 import { renderEmail } from '../email/template.service';
@@ -16,23 +16,12 @@ export interface LockoutStatus {
   failedAttempts: number;
 }
 
-/**
- * Tracks failed sign-in attempts per email address and enforces a lockout
- * policy: after MAX_ATTEMPTS failures within WINDOW_MS, the account is locked
- * for LOCKOUT_MS.
- *
- * Usage in IdentityController:
- *   // Before calling callAuthHandler for sign-in:
- *   await this.lockout.assertNotLocked(email);
- *   // After a failed sign-in response:
- *   await this.lockout.recordFailure(email, req.ip);
- *   // After a successful sign-in response:
- *   await this.lockout.recordSuccess(email);
- */
 @Injectable()
 export class LockoutService {
+  constructor(private readonly drizzle: DrizzleService) {}
+
   async getStatus(email: string): Promise<LockoutStatus> {
-    const lockout = await db.query.accountLockout.findFirst({
+    const lockout = await this.drizzle.db.query.accountLockout.findFirst({
       where: eq(accountLockout.email, email),
     });
 
@@ -61,17 +50,15 @@ export class LockoutService {
   }
 
   async recordFailure(email: string, ipAddress?: string): Promise<void> {
-    // Insert attempt record
-    await db.insert(loginAttempt).values({
+    await this.drizzle.db.insert(loginAttempt).values({
       id: createId(),
       email,
       ipAddress: ipAddress ?? null,
       success: false,
     });
 
-    // Count recent failures in the rolling window
     const windowStart = new Date(Date.now() - WINDOW_MS);
-    const [result] = await db
+    const [result] = await this.drizzle.db
       .select({ count: count() })
       .from(loginAttempt)
       .where(
@@ -86,8 +73,7 @@ export class LockoutService {
     const shouldLock = recentFailures >= MAX_ATTEMPTS;
     const lockedUntil = shouldLock ? new Date(Date.now() + LOCKOUT_MS) : null;
 
-    // Upsert lockout row
-    await db
+    await this.drizzle.db
       .insert(accountLockout)
       .values({
         email,
@@ -104,7 +90,6 @@ export class LockoutService {
         },
       });
 
-    // Send lockout-alert email on the threshold crossing (P15 E2)
     if (shouldLock) {
       void this.sendLockoutAlert(email, recentFailures, ipAddress).catch(() => {/* non-critical */});
     }
@@ -115,7 +100,7 @@ export class LockoutService {
     failedAttempts: number,
     ipAddress?: string,
   ): Promise<void> {
-    const found = await db.query.user.findFirst({ where: eq(user.email, email) });
+    const found = await this.drizzle.db.query.user.findFirst({ where: eq(user.email, email) });
     const resetUrl = `${process.env.BETTER_AUTH_URL ?? 'http://localhost:5555'}/api/auth/forget-password`;
     const { html, text } = renderEmail({
       template: 'lockout-alert',
@@ -133,8 +118,7 @@ export class LockoutService {
   }
 
   async recordSuccess(email: string): Promise<void> {
-    // Clear lockout on successful sign-in
-    await db
+    await this.drizzle.db
       .insert(accountLockout)
       .values({ email, failedAttempts: 0, lockedUntil: null, lastAttemptAt: new Date() })
       .onConflictDoUpdate({
