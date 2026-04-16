@@ -1,7 +1,8 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import * as Handlebars from 'handlebars';
-import * as juice from 'juice';
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const juice = require('juice') as (html: string, options?: object) => string;
 
 /**
  * Template names — correspond to .hbs files in src/email/templates/.

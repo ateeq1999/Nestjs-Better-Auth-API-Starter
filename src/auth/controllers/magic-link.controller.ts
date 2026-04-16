@@ -72,6 +72,6 @@ export class MagicLinkController {
     @Req() req: FastifyRequest,
     @Res() res: FastifyReply,
   ) {
-    return callAuthHandler('/magic-link/verify-magic-link', req, res);
+    return callAuthHandler(req, res, '/api/auth/magic-link/verify-magic-link');
   }
 }

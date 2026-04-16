@@ -11,6 +11,7 @@ import { AppCacheModule } from './cache/cache.module';
 import { validateEnv } from './config/env.config';
 import { JobsModule } from './jobs/jobs.module';
 import { MetricsModule } from './metrics/metrics.module';
+import { EmailPreviewController } from './email/email-preview.controller';
 
 /**
  * Root application module.
@@ -49,6 +50,8 @@ import { MetricsModule } from './metrics/metrics.module';
     MetricsModule,    // Prometheus metrics at /metrics (P14 OB1-OB2)
     // EmailModule,   // BullMQ email queue (N13) — requires REDIS_URL
   ],
+  // EmailPreviewController is registered only outside production (P15 E4)
+  controllers: process.env.NODE_ENV !== 'production' ? [EmailPreviewController] : [],
   providers: [
     // Apply ThrottlerGuard globally so every route is rate-limited by default
     { provide: APP_GUARD, useClass: ThrottlerGuard },

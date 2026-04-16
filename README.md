@@ -18,7 +18,12 @@ A production-ready NestJS API starter with a complete authentication system powe
 | Rate limiting | @nestjs/throttler |
 | API docs | Swagger / OpenAPI (`/docs`) |
 | Email (dev) | Mailpit (SMTP trap) |
-| Runtime | Node.js 20+ / pnpm |
+| Storage | `fs` / MinIO / AWS S3 / Cloudflare R2 (swappable via `STORAGE_DRIVER`) |
+| Scheduler | `@nestjs/schedule` (cron cleanup jobs) |
+| Metrics | Prometheus via `@willsoto/nestjs-prometheus` (`/metrics`) |
+| Tracing | OpenTelemetry SDK (opt-in, OTLP export to Tempo) |
+| Email | Handlebars templates + `juice` CSS inlining |
+| Runtime | Node.js 24 / pnpm |
 
 ---
 
