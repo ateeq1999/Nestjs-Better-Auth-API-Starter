@@ -10,6 +10,7 @@ import {
 import { Throttle } from '@nestjs/throttler';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { callAuthHandler } from '../utils/auth-handler.util';
+import { SkipEnvelope } from '../../common/decorators/skip-envelope.decorator';
 import { auth } from '../auth.config';
 
 /**
@@ -21,6 +22,7 @@ import { auth } from '../auth.config';
  *
  * Only active when GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET are set in .env.
  */
+@SkipEnvelope()
 @ApiTags('OAuth')
 @Throttle({ default: { ttl: 60_000, limit: 20 } })
 @Controller({ version: VERSION_NEUTRAL, path: 'api/auth' })

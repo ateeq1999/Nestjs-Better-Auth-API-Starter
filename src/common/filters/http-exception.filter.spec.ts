@@ -15,11 +15,17 @@ function makeReply() {
   } as unknown as ReturnType<typeof makeReply>;
 }
 
+// Minimal Fastify request mock
+function makeReq(id = 'test-req-id') {
+  return { id } as unknown as import('fastify').FastifyRequest;
+}
+
 // Minimal execution context mock
-function makeCtx(reply: ReturnType<typeof makeReply>) {
+function makeCtx(reply: ReturnType<typeof makeReply>, req = makeReq()) {
   return {
     switchToHttp: () => ({
       getResponse: () => reply,
+      getRequest: () => req,
     }),
   };
 }
@@ -41,9 +47,14 @@ describe('GlobalExceptionFilter', () => {
     expect(reply.status).toHaveBeenCalledWith(404);
     expect(reply.send).toHaveBeenCalledWith(
       expect.objectContaining({
-        statusCode: 404,
-        error: 'NOT_FOUND',
-        message: 'Not found',
+        success: false,
+        error: expect.objectContaining({
+          code: 'NOT_FOUND',
+          message: 'Not found',
+        }),
+        meta: expect.objectContaining({
+          requestId: 'test-req-id',
+        }),
       }),
     );
   });
@@ -54,8 +65,10 @@ describe('GlobalExceptionFilter', () => {
     expect(reply.status).toHaveBeenCalledWith(500);
     expect(reply.send).toHaveBeenCalledWith(
       expect.objectContaining({
-        statusCode: 500,
-        error: 'INTERNAL_SERVER_ERROR',
+        success: false,
+        error: expect.objectContaining({
+          code: 'INTERNAL_SERVER_ERROR',
+        }),
       }),
     );
   });
@@ -63,6 +76,7 @@ describe('GlobalExceptionFilter', () => {
   it('includes a timestamp in the response', () => {
     filter.catch(new HttpException('bad', 400), makeCtx(reply) as never);
     const body = (reply.send as jest.Mock).mock.calls[0][0] as Record<string, unknown>;
-    expect(typeof body['timestamp']).toBe('string');
+    const meta = body['meta'] as Record<string, unknown>;
+    expect(typeof meta['timestamp']).toBe('string');
   });
 });

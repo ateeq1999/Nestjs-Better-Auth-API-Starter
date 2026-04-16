@@ -21,12 +21,14 @@ import { AuthGuard } from '../../common/guards/auth.guard';
 import { VerifyEmailDto, SendVerificationEmailDto } from '../dto/verify-email.dto';
 import { SignOutResponse } from '../responses/auth.response';
 import { callAuthHandler } from '../utils/auth-handler.util';
+import { SkipEnvelope } from '../../common/decorators/skip-envelope.decorator';
 
 /**
  * Handles email address verification flows:
  *   - verify-email              (consumes token from the verification email link)
  *   - send-verification-email   (re-sends the link; requires an active session)
  */
+@SkipEnvelope()
 @ApiTags('Verification')
 @Throttle({ default: { ttl: 60_000, limit: 10 } })
 @Controller({ version: '1', path: 'api/auth' })

@@ -1,37 +1,23 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiCookieAuth,
-} from '@nestjs/swagger';
+import { ApiTags, ApiCookieAuth, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { UserResponse } from '../responses/user.response';
-
-class UserWrapper {
-  user: UserResponse;
-}
+import { ApiDataResponse } from '../../common/decorators/api-data-response.decorator';
 
 /**
- * Exposes the currently authenticated user's profile.
- * All routes require a valid session (enforced by AuthGuard at class level).
+ * GET /v1/api/users/me
+ * Returns the authenticated user from the session (no extra DB call).
+ * Response is wrapped by the global ResponseEnvelopeInterceptor.
  */
 @ApiTags('User')
 @ApiCookieAuth('better-auth.session_token')
+@ApiBearerAuth('bearer-token')
 @UseGuards(AuthGuard)
 @Controller({ version: '1', path: 'api/users' })
 export class UserController {
-  /**
-   * GET /api/users/me
-   * Returns the authenticated user's profile.
-   * The user object is read from the session validated by AuthGuard —
-   * no additional DB call needed.
-   */
   @Get('me')
-  @ApiOperation({ summary: 'Get the authenticated user profile' })
-  @ApiResponse({ status: 200, type: UserWrapper })
-  @ApiResponse({ status: 401, description: 'No active session' })
+  @ApiDataResponse(UserResponse)
   getCurrentUser(
     @CurrentUser()
     currentUser: {
@@ -43,17 +29,15 @@ export class UserController {
       createdAt: Date;
       updatedAt: Date;
     },
-  ): UserWrapper {
+  ): UserResponse {
     return {
-      user: {
-        id: currentUser.id,
-        name: currentUser.name,
-        email: currentUser.email,
-        emailVerified: currentUser.emailVerified,
-        image: currentUser.image,
-        createdAt: currentUser.createdAt,
-        updatedAt: currentUser.updatedAt,
-      },
+      id: currentUser.id,
+      name: currentUser.name,
+      email: currentUser.email,
+      emailVerified: currentUser.emailVerified,
+      image: currentUser.image,
+      createdAt: currentUser.createdAt,
+      updatedAt: currentUser.updatedAt,
     };
   }
 }

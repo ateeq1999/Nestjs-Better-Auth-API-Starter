@@ -26,6 +26,7 @@ import { SessionResponse } from '../responses/session.response';
 import { callAuthHandler } from '../utils/auth-handler.util';
 import { LockoutService } from '../lockout.service';
 import { AuditService } from '../../audit/audit.service';
+import { SkipEnvelope } from '../../common/decorators/skip-envelope.decorator';
 
 /**
  * Handles core identity operations: registration, authentication, and session management.
@@ -35,6 +36,7 @@ import { AuditService } from '../../audit/audit.service';
  *
  * Sign-in additionally enforces account lockout (S2) and records audit events (S8).
  */
+@SkipEnvelope()
 @ApiTags('Identity')
 @Throttle({ default: { ttl: 60_000, limit: 20 } })
 @Controller({ version: '1', path: 'api/auth' })

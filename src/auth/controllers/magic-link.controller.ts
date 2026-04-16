@@ -21,6 +21,7 @@ import { IsEmail } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import { callAuthHandler } from '../utils/auth-handler.util';
+import { SkipEnvelope } from '../../common/decorators/skip-envelope.decorator';
 
 class SendMagicLinkDto {
   @ApiProperty({ example: 'user@example.com' })
@@ -39,6 +40,7 @@ class SendMagicLinkDto {
  *
  * Rate limited to 5 requests per 15 minutes per IP (M4).
  */
+@SkipEnvelope()
 @ApiTags('Magic Link')
 @Controller({ version: '1', path: 'api/auth/magic-link' })
 export class MagicLinkController {

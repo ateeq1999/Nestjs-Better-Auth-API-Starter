@@ -13,6 +13,7 @@ import fastifyMultipart from '@fastify/multipart';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './common/filters/http-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+import { ResponseEnvelopeInterceptor } from './common/interceptors/response-envelope.interceptor';
 import { PinoLoggerService } from './common/logger/pino-logger.service';
 import { features, logFeatures } from './config/features';
 
@@ -93,7 +94,11 @@ async function bootstrap() {
 
   app.useGlobalFilters(new GlobalExceptionFilter());
   app.useGlobalInterceptors(
+    // 1. Serialize first — strips @Exclude() fields before envelope wraps the result
     new ClassSerializerInterceptor(app.get(Reflector)),
+    // 2. Wrap in { success, data, meta } — skipped for @SkipEnvelope() routes
+    new ResponseEnvelopeInterceptor(app.get(Reflector)),
+    // 3. Log after envelope so status code is final
     new LoggingInterceptor(),
   );
   app.useGlobalPipes(

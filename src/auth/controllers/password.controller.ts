@@ -26,6 +26,7 @@ import { ResetPasswordDto } from '../dto/reset-password.dto';
 import { ChangePasswordDto } from '../dto/change-password.dto';
 import { SignOutResponse } from '../responses/auth.response';
 import { callAuthHandler } from '../utils/auth-handler.util';
+import { SkipEnvelope } from '../../common/decorators/skip-envelope.decorator';
 import { account } from '../../db/schema';
 import { db } from '../../db';
 import { eq } from 'drizzle-orm';
@@ -37,6 +38,7 @@ import { hashPassword, verifyPassword } from '../password.service';
  *   - reset-password   (unauthenticated — consumes token from email)
  *   - change-password  (authenticated — requires current password verification)
  */
+@SkipEnvelope()
 @ApiTags('Password')
 @Throttle({ default: { ttl: 60_000, limit: 10 } })
 @Controller({ version: '1', path: 'api/auth' })
