@@ -59,13 +59,18 @@ else
   echo "⏭   Skipping infra start (SKIP_INFRA=true)"
 fi
 
-# ── 2. Migrations ─────────────────────────────────────────────────────────────
+# ── 2. Schema sync ────────────────────────────────────────────────────────────
+# Dev uses `db:push` (idempotent: compares desired schema to live DB, applies
+# only the diff — handles any DB state including tables created by a previous
+# push or empty DBs).
+#
+# Prod uses versioned migrations (db:generate && db:migrate) — see prod.sh.
 if [ "${SKIP_MIGRATE:-false}" != "true" ]; then
-  echo "▶  Running DB migrations..."
-  pnpm db:migrate
-  echo "✓  Migrations complete"
+  echo "▶  Syncing schema (db:push)..."
+  pnpm db:push --force
+  echo "✓  Schema up to date"
 else
-  echo "⏭   Skipping migrations (SKIP_MIGRATE=true)"
+  echo "⏭   Skipping schema sync (SKIP_MIGRATE=true)"
 fi
 
 # ── 3. Seed data ──────────────────────────────────────────────────────────────

@@ -77,8 +77,11 @@ echo " ✓"
 
 # ── 3. Run migrations ─────────────────────────────────────────────────────────
 if [ "${SKIP_MIGRATE:-false}" != "true" ]; then
-  echo "▶  Running DB migrations (NODE_ENV=production)..."
-  pnpm db:migrate
+  echo "▶  Generating migrations from schema..."
+  NODE_ENV=production pnpm db:generate
+
+  echo "▶  Applying migrations (NODE_ENV=production)..."
+  NODE_ENV=production pnpm db:migrate
   echo "✓  Migrations complete"
 else
   echo "⏭   Skipping migrations (SKIP_MIGRATE=true)"

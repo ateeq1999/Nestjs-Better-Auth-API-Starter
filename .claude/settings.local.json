@@ -17,7 +17,12 @@
       "Bash(node -e \"const ba = require\\('better-auth/plugins'\\); console.log\\(Object.keys\\(ba\\)\\)\")",
       "Bash(node -e \"const ba = require\\('better-auth/plugins'\\); const ml = ba.magicLink; console.log\\(typeof ml\\)\")",
       "Bash(node -e \"const ba = require\\('better-auth/plugins'\\); const org = ba.organization; console.log\\(typeof org\\)\")",
-      "Bash(pnpm test *)"
+      "Bash(pnpm test *)",
+      "Bash(SKIP_INFRA=true SKIP_SEED=true bash scripts/dev.sh)",
+      "Bash(docker compose *)",
+      "Bash(DATABASE_URL=\"postgresql://postgres:postgres@localhost:5432/nest_better_auth\" npx drizzle-kit migrate)",
+      "Bash(DATABASE_URL=\"postgresql://postgres:postgres@localhost:5432/nest_better_auth\" npx drizzle-kit migrate --verbose)",
+      "Bash(SKIP_INFRA=true bash scripts/dev.sh)"
     ]
   }
 }
