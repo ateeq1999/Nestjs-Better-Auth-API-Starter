@@ -47,7 +47,7 @@ Edit `.env` with your configuration:
 ```env
 # Required
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/nest_better_auth
-BETTER_AUTH_URL=http://localhost:5555
+BETTER_AUTH_URL=http://localhost:3000
 BETTER_AUTH_SECRET=your-random-secret-at-least-32-characters
 
 # Redis (optional but recommended)
@@ -101,7 +101,7 @@ pnpm start:dev
 ### Check Health
 
 ```bash
-curl http://localhost:5555/health
+curl http://localhost:3000/health
 ```
 
 Expected response:
@@ -118,7 +118,7 @@ Expected response:
 Open your browser:
 
 ```
-http://localhost:5555/docs
+http://localhost:3000/docs
 ```
 
 ### Check Email (Development)
@@ -134,7 +134,7 @@ http://localhost:8025
 ### Sign Up a User
 
 ```bash
-curl -X POST http://localhost:5555/v1/api/auth/sign-up \
+curl -X POST http://localhost:3000/v1/api/auth/sign-up \
   -H "Content-Type: application/json" \
   -d '{
     "email": "test@example.com",
@@ -153,13 +153,13 @@ curl -X POST http://localhost:5555/v1/api/auth/sign-up \
 
 ```bash
 # Cookie-based (web)
-curl -X POST http://localhost:5555/v1/api/auth/sign-in \
+curl -X POST http://localhost:3000/v1/api/auth/sign-in \
   -H "Content-Type: application/json" \
   -c cookies.txt \
   -d '{"email": "test@example.com", "password": "TestPassword123!"}'
 
 # Bearer token (mobile/API)
-curl -X POST "http://localhost:5555/v1/api/auth/sign-in?token=true" \
+curl -X POST "http://localhost:3000/v1/api/auth/sign-in?token=true" \
   -H "Content-Type: application/json" \
   -d '{"email": "test@example.com", "password": "TestPassword123!"}'
 ```
@@ -168,10 +168,10 @@ curl -X POST "http://localhost:5555/v1/api/auth/sign-in?token=true" \
 
 ```bash
 # With cookie
-curl http://localhost:5555/v1/api/users/me -b cookies.txt
+curl http://localhost:3000/v1/api/users/me -b cookies.txt
 
 # With token
-curl http://localhost:5555/v1/api/users/me \
+curl http://localhost:3000/v1/api/users/me \
   -H "Authorization: Bearer YOUR_TOKEN_HERE"
 ```
 
@@ -250,7 +250,7 @@ pnpm bench:health  # Quick health check benchmark
 
 ### Port Already in Use
 
-If port 5555 is in use:
+If port 3000 is in use:
 
 ```bash
 PORT=3000 pnpm dev

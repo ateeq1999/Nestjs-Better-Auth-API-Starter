@@ -5,7 +5,7 @@ global:
 scrape_configs:
   - job_name: 'nest-better-auth'
     static_configs:
-      - targets: ['host.docker.internal:5555']
+      - targets: ['host.docker.internal:3000']
     metrics_path: /metrics
     # If running app in compose with service name 'api':
-    # - targets: ['api:5555']
+    # - targets: ['api:3000']

@@ -18,7 +18,7 @@ export interface LockoutStatus {
 
 @Injectable()
 export class LockoutService {
-  constructor(private readonly drizzle: DrizzleService) {}
+  constructor(private readonly drizzle: DrizzleService) { }
 
   async getStatus(email: string): Promise<LockoutStatus> {
     const lockout = await this.drizzle.db.query.accountLockout.findFirst({
@@ -91,7 +91,7 @@ export class LockoutService {
       });
 
     if (shouldLock) {
-      void this.sendLockoutAlert(email, recentFailures, ipAddress).catch(() => {/* non-critical */});
+      void this.sendLockoutAlert(email, recentFailures, ipAddress).catch(() => {/* non-critical */ });
     }
   }
 
@@ -101,7 +101,7 @@ export class LockoutService {
     ipAddress?: string,
   ): Promise<void> {
     const found = await this.drizzle.db.query.user.findFirst({ where: eq(user.email, email) });
-    const resetUrl = `${process.env.BETTER_AUTH_URL ?? 'http://localhost:5555'}/api/auth/forget-password`;
+    const resetUrl = `${process.env.BETTER_AUTH_URL ?? 'http://localhost:3000'}/api/auth/forget-password`;
     const { html, text } = renderEmail({
       template: 'lockout-alert',
       subject: 'Your account has been temporarily locked',

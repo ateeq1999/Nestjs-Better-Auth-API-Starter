@@ -69,7 +69,7 @@ Edit `.env` with your settings:
 
 ```env
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/nest_better_auth
-BETTER_AUTH_URL=http://localhost:5555
+BETTER_AUTH_URL=http://localhost:3000
 BETTER_AUTH_SECRET=your-secret-at-least-32-chars
 REDIS_URL=redis://localhost:6379
 ```
@@ -91,9 +91,9 @@ This single command:
 
 | Service      | URL                          | Description       |
 | ------------ | ---------------------------- | ----------------- |
-| API          | http://localhost:5555        | Main API server   |
-| Swagger Docs | http://localhost:5555/docs   | API documentation |
-| Health Check | http://localhost:5555/health | Server health     |
+| API          | http://localhost:3000        | Main API server   |
+| Swagger Docs | http://localhost:3000/docs   | API documentation |
+| Health Check | http://localhost:3000/health | Server health     |
 | Mailpit      | http://localhost:8025        | Email inbox (dev) |
 | Adminer      | http://localhost:8080        | Database browser  |
 
@@ -103,18 +103,18 @@ This single command:
 
 ```bash
 # Sign up
-curl -X POST http://localhost:5555/v1/api/auth/sign-up \
+curl -X POST http://localhost:3000/v1/api/auth/sign-up \
   -H "Content-Type: application/json" \
   -d '{"email":"user@example.com","password":"Secure123!","name":"John Doe"}'
 
 # Sign in (web - cookie)
-curl -X POST http://localhost:5555/v1/api/auth/sign-in \
+curl -X POST http://localhost:3000/v1/api/auth/sign-in \
   -H "Content-Type: application/json" \
   -c cookies.txt \
   -d '{"email":"admin@example.com","password":"Admin123!"}'
 
 # Sign in (mobile - Bearer token)
-curl -X POST "http://localhost:5555/v1/api/auth/sign-in?token=true" \
+curl -X POST "http://localhost:3000/v1/api/auth/sign-in?token=true" \
   -H "Content-Type: application/json" \
   -d '{"email":"admin@example.com","password":"Admin123!"}'
 ```
@@ -123,7 +123,7 @@ curl -X POST "http://localhost:5555/v1/api/auth/sign-in?token=true" \
 
 ```bash
 # Redirect to Google
-curl -I http://localhost:5555/api/auth/sign-in/social?provider=google
+curl -I http://localhost:3000/api/auth/sign-in/social?provider=google
 
 # OAuth callback is handled automatically by the provider
 ```
@@ -135,7 +135,7 @@ curl -I http://localhost:5555/api/auth/sign-in/social?provider=google
 TOKEN="bat_abc123..."
 
 # Use in requests
-curl http://localhost:5555/v1/api/users/me \
+curl http://localhost:3000/v1/api/users/me \
   -H "Authorization: Bearer $TOKEN"
 ```
 

@@ -459,7 +459,7 @@ Minimum values for local development:
 
 ```env
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/nest_better_auth
-BETTER_AUTH_URL=http://localhost:5555
+BETTER_AUTH_URL=http://localhost:3000
 BETTER_AUTH_SECRET=any-random-string-at-least-32-chars
 COOKIE_SECRET=any-random-string-at-least-32-chars
 ```
@@ -480,11 +480,11 @@ This single command:
 
 | URL                                       | Purpose                |
 | ----------------------------------------- | ---------------------- |
-| `http://localhost:5555`                   | API                    |
-| `http://localhost:5555/docs`              | Swagger UI             |
-| `http://localhost:5555/health`            | Health check           |
-| `http://localhost:5555/metrics`           | Prometheus metrics     |
-| `http://localhost:5555/dev/email/welcome` | Email template preview |
+| `http://localhost:3000`                   | API                    |
+| `http://localhost:3000/docs`              | Swagger UI             |
+| `http://localhost:3000/health`            | Health check           |
+| `http://localhost:3000/metrics`           | Prometheus metrics     |
+| `http://localhost:3000/dev/email/welcome` | Email template preview |
 | `http://localhost:8025`                   | Mailpit email inbox    |
 | `http://localhost:8080`                   | Adminer (DB browser)   |
 | `http://localhost:5540`                   | RedisInsight           |
@@ -572,18 +572,18 @@ Insomnia manages cookies automatically — no configuration needed. Sign in once
 
 #### Swagger UI
 
-Swagger UI sends cookies when it shares the same origin as the API (both on `localhost:5555`). Sign in via the Swagger form — the browser stores the session cookie — then subsequent Swagger requests from the same browser tab include it automatically. No manual step required.
+Swagger UI sends cookies when it shares the same origin as the API (both on `localhost:3000`). Sign in via the Swagger form — the browser stores the session cookie — then subsequent Swagger requests from the same browser tab include it automatically. No manual step required.
 
 #### curl
 
 ```bash
 # Sign in and save cookie to a jar
-curl -c cookies.txt -X POST http://localhost:5555/v1/api/auth/sign-in \
+curl -c cookies.txt -X POST http://localhost:3000/v1/api/auth/sign-in \
   -H 'Content-Type: application/json' \
   -d '{"email":"admin@example.com","password":"Admin123!"}'
 
 # Use the saved cookie
-curl -b cookies.txt http://localhost:5555/v1/api/users/me
+curl -b cookies.txt http://localhost:3000/v1/api/users/me
 ```
 
 ---
@@ -1041,7 +1041,7 @@ pnpm format            # prettier --write
 
 | Variable                   | Required  | Default                     | Description                                                |
 | -------------------------- | --------- | --------------------------- | ---------------------------------------------------------- |
-| `PORT`                     | No        | `5555`                      | HTTP listen port                                           |
+| `PORT`                     | No        | `3000`                      | HTTP listen port                                           |
 | `NODE_ENV`                 | No        | `development`               | `development` or `production`                              |
 | `DATABASE_URL`             | **Yes**   | —                           | PostgreSQL connection string                               |
 | `DB_POOL_MAX`              | No        | `10`                        | Max database pool connections                              |

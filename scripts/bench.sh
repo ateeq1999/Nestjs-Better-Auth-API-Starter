@@ -16,7 +16,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
 
-BASE="${BASE_URL:-http://localhost:5555}"
+BASE="${BASE_URL:-http://localhost:3000}"
 CONNECTIONS="${CONNECTIONS:-50}"
 DURATION="${DURATION:-10}"
 SCENARIO="${SCENARIO:-all}"

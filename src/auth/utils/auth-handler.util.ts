@@ -24,7 +24,7 @@ export async function callAuthHandler(
   body?: unknown,
 ): Promise<void> {
   const baseUrl =
-    process.env.BETTER_AUTH_URL || `http://localhost:${process.env.PORT ?? 5555}`;
+    process.env.BETTER_AUTH_URL || `http://localhost:${process.env.PORT ?? 3000}`;
 
   // Build target URL — preserve query params from the original request
   const target = new URL(authPath, baseUrl);

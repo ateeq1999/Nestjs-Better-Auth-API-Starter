@@ -97,7 +97,7 @@ docker compose \
 # Wait for health check
 echo -n "⏳  Waiting for API health check"
 RETRIES=30
-until curl -sf "http://localhost:${PORT:-5555}/health" > /dev/null 2>&1 || [ "$RETRIES" -eq 0 ]; do
+until curl -sf "http://localhost:${PORT:-3000}/health" > /dev/null 2>&1 || [ "$RETRIES" -eq 0 ]; do
   printf '.'
   sleep 2
   RETRIES=$((RETRIES - 1))
@@ -112,7 +112,7 @@ echo " ✓"
 
 echo ""
 echo "✅  Production stack is running:"
-echo "   API     → http://localhost:${PORT:-5555}"
-echo "   Health  → http://localhost:${PORT:-5555}/health"
-echo "   Metrics → http://localhost:${PORT:-5555}/metrics"
+echo "   API     → http://localhost:${PORT:-3000}"
+echo "   Health  → http://localhost:${PORT:-3000}/health"
+echo "   Metrics → http://localhost:${PORT:-3000}/metrics"
 echo ""

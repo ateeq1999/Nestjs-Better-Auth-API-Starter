@@ -9,8 +9,8 @@ import { features } from '../config/features';
 
 // ── Conditional plugin imports ────────────────────────────────────────────────
 // Loaded lazily so disabled plugins add zero runtime cost.
-const twoFactorPlugin  = features.twoFactor    ? require('better-auth/plugins').twoFactor  : null;
-const magicLinkPlugin  = features.magicLink    ? require('better-auth/plugins').magicLink  : null;
+const twoFactorPlugin = features.twoFactor ? require('better-auth/plugins').twoFactor : null;
+const magicLinkPlugin = features.magicLink ? require('better-auth/plugins').magicLink : null;
 const organizationPlugin = features.organization ? require('better-auth/plugins').organization : null;
 
 // ── Auth plugins array (always includes bearer for mobile support) ────────────
@@ -23,17 +23,17 @@ const plugins = [
 
   ...(magicLinkPlugin
     ? [
-        magicLinkPlugin({
-          sendMagicLink: async (data: { email: string; url: string }) => {
-            const { html, text } = renderEmail({
-              template: 'magic-link',
-              subject: 'Your sign-in link',
-              data: { url: data.url },
-            });
-            await sendEmail({ to: data.email, subject: 'Your sign-in link', html, text });
-          },
-        }),
-      ]
+      magicLinkPlugin({
+        sendMagicLink: async (data: { email: string; url: string }) => {
+          const { html, text } = renderEmail({
+            template: 'magic-link',
+            subject: 'Your sign-in link',
+            data: { url: data.url },
+          });
+          await sendEmail({ to: data.email, subject: 'Your sign-in link', html, text });
+        },
+      }),
+    ]
     : []),
 
   ...(organizationPlugin ? [organizationPlugin()] : []),
@@ -46,11 +46,11 @@ const adapterSchema: Record<string, unknown> = {
   account: schema.account,
   verification: schema.verification,
 };
-if (features.twoFactor)    adapterSchema['twoFactor']    = schema.twoFactor;
+if (features.twoFactor) adapterSchema['twoFactor'] = schema.twoFactor;
 if (features.organization) {
   adapterSchema['organization'] = schema.organization;
-  adapterSchema['member']       = schema.member;
-  adapterSchema['invitation']   = schema.invitation;
+  adapterSchema['member'] = schema.member;
+  adapterSchema['invitation'] = schema.invitation;
 }
 
 // ── Social providers (only wired when env vars are present AND feature is on) ─
@@ -114,7 +114,7 @@ export const auth = betterAuth({
   trustedOrigins: (process.env.CORS_ORIGINS ?? 'http://localhost:5173,http://localhost:3000')
     .split(',')
     .map((o) => o.trim()),
-  baseURL: process.env.BETTER_AUTH_URL || 'http://localhost:5555',
+  baseURL: process.env.BETTER_AUTH_URL || 'http://localhost:3000',
 });
 
 export type Auth = typeof auth;

@@ -8,25 +8,21 @@
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
-
     "dev": "bash scripts/dev.sh",
     "dev:no-seed": "SKIP_SEED=true bash scripts/dev.sh",
     "dev:no-infra": "SKIP_INFRA=true SKIP_SEED=true bash scripts/dev.sh",
     "prod": "bash scripts/prod.sh",
     "prod:no-build": "SKIP_BUILD=true bash scripts/prod.sh",
-
     "infra:up": "docker compose up -d",
     "infra:up:core": "docker compose up -d postgres redis mailpit",
     "infra:down": "docker compose down",
     "infra:reset": "docker compose down -v",
     "infra:logs": "docker compose logs -f",
     "infra:ps": "docker compose ps",
-
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:deploy": "pnpm db:generate && pnpm db:migrate",
@@ -34,17 +30,15 @@
     "db:studio": "drizzle-kit studio",
     "db:check": "drizzle-kit check",
     "db:seed": "tsx --tsconfig tsconfig.json scripts/seed.ts",
-
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-
     "bench": "bash scripts/bench.sh",
     "bench:health": "SCENARIO=health bash scripts/bench.sh",
     "bench:auth": "SCENARIO=sign-in bash scripts/bench.sh",
-    "bench:quick": "node -e \"const ac=require('autocannon');const i=ac({url:'http://localhost:5555/health',connections:10,duration:5},(_,r)=>{ac.printResult(r);process.exit(0)});ac.track(i,{renderProgressBar:true})\""
+    "bench:quick": "node -e \"const ac=require('autocannon');const i=ac({url:'http://localhost:3000/health',connections:10,duration:5},(_,r)=>{ac.printResult(r);process.exit(0)});ac.track(i,{renderProgressBar:true})\""
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1030.0",

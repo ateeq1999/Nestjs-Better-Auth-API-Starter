@@ -48,6 +48,6 @@ RUN groupadd --system --gid 1001 nodejs \
   && useradd --system --uid 1001 --gid nodejs nestjs
 USER nestjs
 
-EXPOSE 5555
+EXPOSE 3000
 
 CMD ["node", "dist/main"]

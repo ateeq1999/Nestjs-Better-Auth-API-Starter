@@ -5,7 +5,7 @@ Complete API documentation for the NestJS Better-Auth API Starter.
 ## Base URL
 
 ```
-http://localhost:5555
+http://localhost:3000
 ```
 
 API versioning: Use `/v1/api/` for explicit versioning or `/api/` for the default version.
@@ -679,7 +679,7 @@ All API responses (except auth proxy endpoints) follow this envelope format:
 Interactive API documentation is available at:
 
 ```
-http://localhost:5555/docs
+http://localhost:3000/docs
 ```
 
 Swagger UI provides:

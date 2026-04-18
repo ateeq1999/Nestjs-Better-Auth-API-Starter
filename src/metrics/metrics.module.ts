@@ -16,7 +16,7 @@ import { CustomMetricsController } from './metrics.controller';
  * Scrape config for Prometheus (observability/prometheus.yml):
  *   - job_name: 'nest-better-auth'
  *     static_configs:
- *       - targets: ['api:5555']
+ *       - targets: ['api:3000']
  *     metrics_path: /metrics
  */
 @Module({
@@ -44,4 +44,4 @@ import { CustomMetricsController } from './metrics.controller';
   ],
   exports: ['PROM_METRIC_AUTH_EVENTS_TOTAL', 'PROM_METRIC_HTTP_REQUEST_DURATION_SECONDS'],
 })
-export class MetricsModule {}
+export class MetricsModule { }

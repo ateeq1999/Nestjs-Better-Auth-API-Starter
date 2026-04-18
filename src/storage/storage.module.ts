@@ -27,37 +27,37 @@ import { S3StorageAdapter } from './adapters/s3.adapter';
         switch (driver) {
           case 'minio':
             return new MinioStorageAdapter({
-              endPoint:  config.get<string>('MINIO_ENDPOINT') ?? 'localhost',
-              port:      config.get<number>('MINIO_PORT') ?? 9000,
-              useSSL:    config.get<string>('MINIO_USE_SSL') === 'true',
+              endPoint: config.get<string>('MINIO_ENDPOINT') ?? 'localhost',
+              port: config.get<number>('MINIO_PORT') ?? 9000,
+              useSSL: config.get<string>('MINIO_USE_SSL') === 'true',
               accessKey: config.get<string>('MINIO_ACCESS_KEY') ?? 'minioadmin',
               secretKey: config.get<string>('MINIO_SECRET_KEY') ?? 'minioadmin',
-              bucket:    config.get<string>('MINIO_BUCKET') ?? 'uploads',
+              bucket: config.get<string>('MINIO_BUCKET') ?? 'uploads',
               publicUrl: config.get<string>('MINIO_PUBLIC_URL') ?? 'http://localhost:9000/uploads',
             });
 
           case 's3':
             return new S3StorageAdapter({
-              region:          config.getOrThrow<string>('AWS_REGION'),
-              bucket:          config.getOrThrow<string>('AWS_BUCKET'),
-              accessKeyId:     config.getOrThrow<string>('AWS_ACCESS_KEY_ID'),
+              region: config.getOrThrow<string>('AWS_REGION'),
+              bucket: config.getOrThrow<string>('AWS_BUCKET'),
+              accessKeyId: config.getOrThrow<string>('AWS_ACCESS_KEY_ID'),
               secretAccessKey: config.getOrThrow<string>('AWS_SECRET_ACCESS_KEY'),
-              publicUrl:       config.getOrThrow<string>('AWS_PUBLIC_URL'),
+              publicUrl: config.getOrThrow<string>('AWS_PUBLIC_URL'),
             });
 
           case 'r2':
             return new S3StorageAdapter({
-              region:          'auto',
-              bucket:          config.getOrThrow<string>('R2_BUCKET'),
-              accessKeyId:     config.getOrThrow<string>('R2_ACCESS_KEY_ID'),
+              region: 'auto',
+              bucket: config.getOrThrow<string>('R2_BUCKET'),
+              accessKeyId: config.getOrThrow<string>('R2_ACCESS_KEY_ID'),
               secretAccessKey: config.getOrThrow<string>('R2_SECRET_ACCESS_KEY'),
-              endpoint:        `https://${config.getOrThrow<string>('R2_ACCOUNT_ID')}.r2.cloudflarestorage.com`,
-              publicUrl:       config.getOrThrow<string>('R2_PUBLIC_URL'),
+              endpoint: `https://${config.getOrThrow<string>('R2_ACCOUNT_ID')}.r2.cloudflarestorage.com`,
+              publicUrl: config.getOrThrow<string>('R2_PUBLIC_URL'),
             });
 
           default: // 'fs'
             return new FsStorageAdapter(
-              config.get<string>('BETTER_AUTH_URL') ?? 'http://localhost:5555',
+              config.get<string>('BETTER_AUTH_URL') ?? 'http://localhost:3000',
             );
         }
       },
@@ -65,4 +65,4 @@ import { S3StorageAdapter } from './adapters/s3.adapter';
   ],
   exports: [STORAGE_SERVICE],
 })
-export class StorageModule {}
+export class StorageModule { }

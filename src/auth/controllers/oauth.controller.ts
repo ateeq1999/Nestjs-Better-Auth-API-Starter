@@ -89,7 +89,7 @@ export class OAuthController {
   ): Promise<void> {
     // Pass the request through to better-auth unchanged — path is taken from req.url
     const baseUrl =
-      process.env.BETTER_AUTH_URL || `http://localhost:${process.env.PORT ?? 5555}`;
+      process.env.BETTER_AUTH_URL || `http://localhost:${process.env.PORT ?? 3000}`;
     const url = new URL(req.url, baseUrl);
 
     const headers = new Headers();

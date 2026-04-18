@@ -14,19 +14,19 @@ const TEMPLATES: EmailTemplate[] = [
 const SAMPLE_DATA: Record<EmailTemplate, Record<string, unknown>> = {
   welcome: {
     name: 'Jane Doe',
-    url: 'http://localhost:5555/api/auth/verify-email?token=preview-token',
+    url: 'http://localhost:3000/api/auth/verify-email?token=preview-token',
   },
   'email-verification': {
     name: 'Jane Doe',
-    url: 'http://localhost:5555/api/auth/verify-email?token=preview-token',
+    url: 'http://localhost:3000/api/auth/verify-email?token=preview-token',
   },
   'password-reset': {
     name: 'Jane Doe',
     email: 'jane@example.com',
-    url: 'http://localhost:5555/api/auth/reset-password?token=preview-token',
+    url: 'http://localhost:3000/api/auth/reset-password?token=preview-token',
   },
   'magic-link': {
-    url: 'http://localhost:5555/api/auth/magic-link/verify-magic-link?token=preview-token',
+    url: 'http://localhost:3000/api/auth/magic-link/verify-magic-link?token=preview-token',
   },
   'lockout-alert': {
     name: 'Jane Doe',
@@ -34,7 +34,7 @@ const SAMPLE_DATA: Record<EmailTemplate, Record<string, unknown>> = {
     failedAttempts: 5,
     ipAddress: '203.0.113.42',
     timestamp: new Date().toUTCString(),
-    resetUrl: 'http://localhost:5555/api/auth/forget-password',
+    resetUrl: 'http://localhost:3000/api/auth/forget-password',
   },
 };
 

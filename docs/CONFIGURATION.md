@@ -8,7 +8,7 @@ This guide covers all configuration options for the NestJS Better-Auth API Start
 
 | Variable                   | Required  | Default                                       | Description                                       |
 | -------------------------- | --------- | --------------------------------------------- | ------------------------------------------------- |
-| `PORT`                     | No        | `5555`                                        | HTTP server port                                  |
+| `PORT`                     | No        | `3000`                                        | HTTP server port                                  |
 | `NODE_ENV`                 | No        | `development`                                 | Environment: `development` or `production`        |
 | `DATABASE_URL`             | **Yes**   | —                                             | PostgreSQL connection string                      |
 | `DB_POOL_MAX`              | No        | `10`                                          | Maximum database pool connections                 |
@@ -297,9 +297,9 @@ export const featureDefaults = {
 
 ```env
 NODE_ENV=development
-PORT=5555
+PORT=3000
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/nest_better_auth
-BETTER_AUTH_URL=http://localhost:5555
+BETTER_AUTH_URL=http://localhost:3000
 BETTER_AUTH_SECRET=dev-secret-at-least-32-characters-long
 REDIS_URL=redis://localhost:6379
 SMTP_HOST=localhost
