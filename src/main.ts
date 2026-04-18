@@ -27,22 +27,22 @@ async function bootstrap() {
   const lokiUrl = features.logShipping ? process.env.LOKI_URL : undefined;
   const pinoOptions = lokiUrl
     ? {
-        transport: {
-          targets: [
-            { target: 'pino/file', options: { destination: 1 }, level: 'info' },
-            {
-              target: 'pino-loki',
-              options: {
-                host: lokiUrl,
-                labels: { app: process.env.OTEL_SERVICE_NAME ?? 'nest-better-auth', env: process.env.NODE_ENV ?? 'development' },
-                batching: true,
-                interval: 5,
-              },
-              level: 'info',
+      transport: {
+        targets: [
+          { target: 'pino/file', options: { destination: 1 }, level: 'info' },
+          {
+            target: 'pino-loki',
+            options: {
+              host: lokiUrl,
+              labels: { app: process.env.OTEL_SERVICE_NAME ?? 'nest-better-auth', env: process.env.NODE_ENV ?? 'development' },
+              batching: true,
+              interval: 5,
             },
-          ],
-        },
-      }
+            level: 'info',
+          },
+        ],
+      },
+    }
     : {};
 
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -131,7 +131,7 @@ async function bootstrap() {
     await (fastify as any).register(serverAdapter.registerPlugin(), { prefix: '/admin/queues' });
   }
 
-  const port = process.env.PORT ?? 5555;
+  const port = process.env.PORT ?? 3000;
   await app.listen(port, '0.0.0.0');
 
   // ── Startup banner ──────────────────────────────────────────────────────────
